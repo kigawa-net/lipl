@@ -91,76 +91,9 @@ LP生成（AIがテキスト・レイアウトを自動生成）
 3. 回答をもとにAIがLP用のキャッチコピー・説明文を生成
 4. Free プランは質問3回・生成1回のみ。Basic以上は無制限で再生成可能
 
-## データモデル（概要）
+## データモデル
 
-### User
-
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
-| id | UUID | Keycloak の subject (sub) と一致 |
-| keycloakSub | String | Keycloak subject |
-| plan | Enum(FREE, BASIC, PRO) | |
-| stripeCustomerId | String? | |
-| createdAt | DateTime | |
-
-### Store
-
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
-| id | UUID | |
-| userId | UUID | |
-| slug | String | `<slug>-lipl.kigawa.net` の slug（英数字・ハイフン、一意） |
-| name | String | 店名 |
-| category | String | 業種（例: ラーメン、カフェ） |
-| address | String | |
-| phone | String? | |
-| businessHours | JSON | 曜日ごとの営業時間 |
-| snsLinks | JSON | Instagram・X・食べログなど |
-| customDomain | String? | Proのみ |
-| published | Boolean | |
-| createdAt | DateTime | |
-
-### Photo
-
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
-| id | UUID | |
-| storeId | UUID | |
-| url | String | オブジェクトストレージURL |
-| order | Int | 表示順 |
-
-### MenuItem
-
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
-| id | UUID | |
-| storeId | UUID | |
-| name | String | |
-| price | Int? | 円 |
-| description | String? | |
-| photoUrl | String? | |
-
-### InterviewSession
-
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
-| id | UUID | |
-| storeId | UUID | |
-| messages | JSON | チャット履歴 |
-| generationCount | Int | 生成回数（Freeは上限1） |
-| createdAt | DateTime | |
-
-### GeneratedLP
-
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
-| id | UUID | |
-| storeId | UUID | |
-| catchcopy | String | キャッチコピー |
-| bodyText | String | 本文 |
-| layoutJson | JSON | レイアウト設定 |
-| isActive | Boolean | 現在公開中のバージョン |
-| createdAt | DateTime | |
+実装コードを正とする。最新のスキーマはバックエンドの DB マイグレーションファイルを参照すること。
 
 ## Tech Stack
 
