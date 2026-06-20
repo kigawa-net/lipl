@@ -14,13 +14,27 @@
 
 ## Tech Stack
 
-- Next.js
+### Frontend
+
+- React
+- React Router v8
 - TypeScript
 - Tailwind CSS
-- Supabase
-- Cloudflare Pages
-- Cloudflare Workers
-- Cloudflare R2
+
+### Backend
+
+- Kotlin
+- Ktor
+- PostgreSQL
+
+### Infrastructure
+
+- Kubernetes
+- Docker
+- GitHub Actions
+
+### External Services
+
 - Stripe
 - Claude Haiku
 - Claude Sonnet
