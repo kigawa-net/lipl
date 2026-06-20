@@ -26,15 +26,23 @@ LP生成（AIがテキスト・レイアウトを自動生成）
 公開（lipl.net/<店舗スラッグ> で即時公開）
 ```
 
-## 画面一覧
+## 認証
 
-### 認証
+- **Keycloak** を使用（`user.kigawa.net` で運用中のインスタンス）
+- realm: `lipl`（新規作成）
+- フロントエンドは OIDC (Authorization Code Flow + PKCE)
+- バックエンドは JWT 検証（Keycloak の公開鍵で署名検証）
+- パスワード管理・メール認証・パスワードリセットはすべて Keycloak に委譲
+
+### 画面
 
 | 画面 | パス | 説明 |
 |------|------|------|
-| サインアップ | `/signup` | メールアドレス＋パスワード登録 |
-| ログイン | `/login` | メールアドレス＋パスワード |
-| パスワードリセット | `/reset-password` | メール送信→再設定 |
+| ログイン | `/login` | Keycloak のログインページへリダイレクト |
+| コールバック | `/callback` | Keycloak からの認可コードを受け取りトークン取得 |
+| ログアウト | `/logout` | Keycloak セッションも終了 |
+
+## 画面一覧
 
 ### ダッシュボード（ログイン後）
 
@@ -80,9 +88,8 @@ LP生成（AIがテキスト・レイアウトを自動生成）
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
-| id | UUID | |
-| email | String | |
-| passwordHash | String | |
+| id | UUID | Keycloak の subject (sub) と一致 |
+| keycloakSub | String | Keycloak subject |
 | plan | Enum(FREE, BASIC, PRO) | |
 | stripeCustomerId | String? | |
 | createdAt | DateTime | |
@@ -169,6 +176,7 @@ LP生成（AIがテキスト・レイアウトを自動生成）
 
 ### External Services
 
+- **Keycloak**（認証・認可。`user.kigawa.net` で運用中）
 - Stripe（決済・サブスクリプション管理）
 - Claude Haiku（Free プランのAI生成）
 - Claude Sonnet（Basic・Pro プランのAI生成）
