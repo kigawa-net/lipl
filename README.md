@@ -1,13 +1,13 @@
 # Lipl
 
-> お店の情報を入力するだけ。  
+> お店の情報を入力するだけ。
 > 3分で公式ページを公開。
 
-Lipl is a simple official-page builder for restaurants. It helps restaurant owners create and publish a mobile-friendly official page without HTML, CSS, servers, domains, or DNS knowledge.
+Liplは飲食店向けの公式ページ作成サービスです。
 
-## Concept
+HTML、CSS、サーバー、ドメイン、DNSの知識がなくても、店舗情報・写真・メニューを入力するだけで公式ページを作成・公開できます。
 
-Restaurants enter basic information, menus, and photos. Lipl assists with AI questions when information is missing, generates page copy, previews the result, and publishes a public URL.
+## コンセプト
 
 ```text
 店舗情報入力
@@ -19,71 +19,81 @@ AI補助
 公開
 ```
 
-## MVP scope
+Instagramしか持っていない飲食店でも、誰でも簡単に公式ページを持てる世界を目指します。
 
-- Restaurant profile creation
-- Photo upload
-- Menu registration
-- AI-assisted follow-up questions
-- AI-generated LP copy
-- Preview
-- One-click publish
-- Public URL generation
-- Edit and unpublish controls
+## MVP機能
 
-## Target users
+- 店舗情報登録
+- 写真アップロード
+- メニュー登録
+- AIヒアリング
+- LP自動生成
+- プレビュー
+- ワンクリック公開
+- 公開URL発行
+- 編集・公開停止
 
-- Independent restaurants
-- Cafes
-- Izakaya
-- Ramen shops
-- Small restaurants
-- Food trucks
+## ターゲット
 
-## Plans
+- 個人経営飲食店
+- カフェ
+- 居酒屋
+- ラーメン店
+- レストラン
+- キッチンカー
+
+## プラン
 
 ### Free
 
-- 1 shop
-- 1 published page
-- 5 photos
-- 5 menu items
-- 1 AI generation
-- Up to 3 AI questions
-- Lipl branding shown
-- No custom domain
+- 店舗数1
+- LP1ページ
+- 写真5枚
+- メニュー5品
+- AI生成1回
+- AI質問3問まで
+- Liplロゴ表示
+- 独自ドメイン不可
 - Claude Haiku
 
-### Basic
+### Basic（月980円）
 
-- 980 JPY/month
-- AI regeneration
-- 20 photos
-- 30 menu items
-- Branding removal
-- QR code generation
-- News posts
+- AI再生成
+- 写真20枚
+- メニュー30品
+- ロゴ非表示
+- QRコード生成
+- お知らせ投稿
 - Claude Sonnet
 
-### Pro
+### Pro（月2,980円）
 
-- 2,980 JPY/month
-- Custom domain
-- Contact form
-- SEO settings
-- Analytics
-- Multilingual support
-- Multiple reservation links
+- 独自ドメイン
+- お問い合わせフォーム
+- SEO設定
+- アクセス解析
+- 多言語対応
+- 予約リンク複数
 
-## Initial tech direction
+## 技術構成
 
-- Frontend: Next.js, TypeScript, Tailwind CSS
-- Backend: Supabase Auth, PostgreSQL, Storage, Edge Functions
-- Hosting: Cloudflare Pages / Workers
-- Object storage: Cloudflare R2
-- Payments: Stripe
-- AI: Anthropic Claude Haiku / Sonnet
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Supabase
+- Cloudflare Pages
+- Cloudflare Workers
+- Cloudflare R2
+- Stripe
+- Anthropic Claude Haiku
+- Anthropic Claude Sonnet
 
-## Product vision
+## ビジョン
 
-Lipl aims to become a digital business card for restaurants: a single official hub for menus, opening hours, location, reservations, SNS links, and announcements.
+Liplは単なるLP作成ツールではありません。
+
+飲食店の営業時間、メニュー、アクセス、予約、SNSをまとめる
+
+**飲食店のデジタル名刺**
+
+を目指します。
