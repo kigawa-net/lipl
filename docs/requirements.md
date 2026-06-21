@@ -108,7 +108,7 @@ LP生成（AIがテキスト・レイアウトを自動生成）
 
 - Kotlin
 - Ktor
-- PostgreSQL
+- MariaDB
 
 ### Infrastructure
 
