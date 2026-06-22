@@ -1,5 +1,7 @@
 # Lipl Requirements
 
+> 関連ドキュメント: [README.md](../README.md) | [CLAUDE.md](../CLAUDE.md)
+
 ## Vision
 
 飲食店向けの公式ページ作成サービス。

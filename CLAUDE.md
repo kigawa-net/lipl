@@ -63,6 +63,7 @@ lipl/
 
 実装コードを正とする。最新のスキーマはバックエンドの DB マイグレーションファイルを参照する。
 
-## 技術スタック参照
+## 関連ドキュメント
 
-詳細は `docs/requirements.md` および `README.md` を参照。
+- [README.md](README.md) — プロジェクト概要・技術構成・プラン
+- [docs/requirements.md](docs/requirements.md) — 要件定義（MVP・画面・料金・技術スタック）
