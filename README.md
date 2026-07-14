@@ -12,6 +12,7 @@ HTML、CSS、サーバー、ドメイン、DNSの知識がなくても、店舗�
 | ファイル | 内容 |
 |----------|------|
 | [docs/requirements.md](docs/requirements.md) | 要件定義（MVP・画面・料金・技術スタック） |
+| [docs/ai-app-proposal.md](docs/ai-app-proposal.md) | 生成AIアプリ企画案（あいちセレクトAIコンテスト提出用） |
 | [CLAUDE.md](CLAUDE.md) | 開発規約（ブランチ・コミット・コーディング規約） |
 
 ## コンセプト
