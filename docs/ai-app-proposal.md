@@ -1,8 +1,5 @@
 # 生成AIアプリ企画案（あいちセレクトAIコンテスト提出用）
 
-> 関連ドキュメント: [README.md](../README.md) | [requirements.md](requirements.md)
-
-- **課題**: UN42-03 生成AIアプリ（企画案）
 - **提出先**: [あいちセレクト AIコンテスト](https://aichi-select.net/ai_contest/)
 - **参加部門**: クリエイティブ部門（1名エントリー）
 - **企画名**: Lipl（リプル）
@@ -61,8 +58,8 @@ AIヒアリング（チャット形式）
 
 ## 7. 今後の展望
 
-- 課題No04（9/9）: 本企画案をベースに詳細な企画提出を行う
-- 課題No05（9/30）: α版プロトタイプとして、店舗情報入力〜AIヒアリング〜LP生成〜プレビューまでのMVP機能を実装する
+- 本企画案をベースに詳細な企画提出を行う
+- α版プロトタイプとして、店舗情報入力〜AIヒアリング〜LP生成〜プレビューまでのMVP機能を実装する
 - 開発部門（複数名エントリー）への展開も視野に、フロントエンド（React）・バックエンド（Kotlin/Ktor）の実装を継続する
 
 ## 8. 技術構成（参考）
@@ -71,5 +68,3 @@ AIヒアリング（チャット形式）
 - バックエンド: Kotlin / Ktor / MariaDB
 - インフラ: Kubernetes / Docker / GitHub Actions
 - 生成AI: Anthropic Claude（Haiku・Sonnet）
-
-詳細な要件定義は [requirements.md](requirements.md) を参照。
