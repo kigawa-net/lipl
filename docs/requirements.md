@@ -331,6 +331,8 @@ Basic 以上で提供される質的機能が Free へのダウングレード�
 
 - Kubernetes
 - Docker
+- Ingress Controller
+- cert-manager
 - GitHub Actions
 
 ### External Services
