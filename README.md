@@ -117,6 +117,10 @@ Instagramしか持っていない飲食店でも、誰でも簡単に公式ペ�
 - cert-manager
 - GitHub Actions
 
+### 認証
+
+- Keycloak（`user.kigawa.net` で運用中。OIDC + JWT検証）
+
 ### 決済・AI
 
 - Stripe
@@ -133,6 +137,7 @@ Ingress
 React Router v8 フロントエンド
 ↓
 Ktor API
+├─ Keycloak（認証）
 ├─ MariaDB
 ├─ オブジェクトストレージ
 ├─ Stripe
