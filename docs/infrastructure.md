@@ -2,20 +2,20 @@
 
 > 関連ドキュメント: [requirements.md](requirements.md) | [../README.md](../README.md) | [../CLAUDE.md](../CLAUDE.md)
 
-このドキュメントは `docs/requirements.md` の要件を、既存の kigawa-net 基盤（`kigawa-net/platform` で ArgoCD GitOps 管理されているクラスタ）の上にどう実装するかを定義する。
+このドキュメントは `docs/requirements.md` の要件を、[kigawa-net/platform](https://github.com/kigawa-net/platform) で ArgoCD GitOps 管理されているクラスタの上にどう実装するかを定義する。Lipl はこのリポジトリに新規アプリとしてデプロイする最初のアプリケーションになる。
 
-> **注記**: `kigawa-net/platform` は本ドキュメント作成時点ではまだ存在しないリポジトリ名。調査は現行の [kigawa-net-k8s](https://github.com/kigawa-net/kigawa-net-k8s) リポジトリ（同様にArgoCD GitOpsでこのクラスタを管理している）に対して行った。`platform` は `kigawa-net-k8s` を指す想定名として本ドキュメント内で使用している（リネームまたは移行が前提）。
+> **注記**: `platform` は既存の [kigawa-net-k8s](https://github.com/kigawa-net/kigawa-net-k8s) とは独立した新規リポジトリで、同一クラスタを対象とする。既存アプリ（keruta, lp 等）は `kigawa-net-k8s` 側に残り、移行は行っていない。そのため `platform` は AppProject（`platform`）・Namespaceプレフィックス（`platform-*`）を `kigawa-net-k8s` 側（AppProject `kigawa-net`、Namespaceプレフィックス `kigawa-net-*`）とは独立させ、リソース競合を避けている。Ingress Class・レジストリ・Secret管理・DB構成・ストレージクラス等の**クラスタ共通設定**は同一クラスタ上のため両リポジトリで共有する。
 
 ## 前提（既存インフラの調査結果）
 
-`platform`（調査時点では `kigawa-net-k8s`）リポジトリの既存アプリ（keruta, lp 等）を調査し、以下の規約を確認した。Lipl もこれに従う。
+`kigawa-net-k8s` リポジトリの既存アプリ（keruta, lp 等）を調査し、クラスタ共通の規約を確認した。`platform` リポジトリはこれらの共通設定を引き継ぎつつ、AppProject・Namespaceプレフィックスは独立させている。
 
 | 項目 | 既存の規約 |
 |------|-----------|
 | GitOpsリポジトリ | `platform`（`main` へのマージで自動デプロイ） |
 | マニフェスト配置 | app本体のリポジトリ（`lipl`）には k8s マニフェストは置かず、`platform` 側の `lipl/main/` に配置する |
-| ArgoCD Application | `apps/lipl-main.yml` を新設し、`kigawa-net` AppProject 配下に追加 |
-| Namespace命名 | `kigawa-net-lipl-main`（`kigawa-net-keruta-main` 等と同様） |
+| ArgoCD Application | `apps/lipl-main-app.yml` を `platform` リポジトリに新設し、`platform` AppProject 配下に追加 |
+| Namespace命名 | `platform-lipl-main`（`kigawa-net-keruta-main` 等と同様） |
 | Ingress Class | `haproxy`（nginx ではない） |
 | ベースドメイン | `kigawa.net`。個々のアプリは `<app>.kigawa.net` の1ラベルサブドメインを使用し、Ingress マニフェスト自体に TLS ブロックの記載はない（クラスタ側で `kigawa.net` 系サブドメインを一括カバーするデフォルト証明書が設定されていると推測される） |
 | コンテナレジストリ | `harbor.kigawa.net`（`private/<service>` パス。`imagePullSecrets: harbor-registry`） |
@@ -44,7 +44,7 @@
 
 ```
 lipl/main/
-├── ns.yaml                  # Namespace: kigawa-net-lipl-main
+├── ns.yaml                  # Namespace: platform-lipl-main
 ├── lipl-frontend.yaml        # Deployment + Service + BitwardenSecret
 ├── lipl-api.yaml              # Deployment + Service + BitwardenSecret
 ├── mariadb-lipl.yml          # MariaDB + Database + User + Grant (CRD)
@@ -67,7 +67,7 @@ lipl/main/
 - `DB_JDBC_URL=jdbc:mysql://mariadb-lipl:3306/lipl`（`mariadb-ktse` と同じパターン）
 - Keycloak JWT検証用の issuer/JWKS URL
 - Stripe / Claude API / オブジェクトストレージの認証情報は BitwardenSecret 経由で注入
-- カスタムドメイン機能のため、`kigawa-net-lipl-main` namespace内で `Ingress` と `Certificate`（cert-manager）を作成・削除できる RBAC を持つ ServiceAccount を使用する（下記「独自ドメイン」参照）
+- カスタムドメイン機能のため、`platform-lipl-main` namespace内で `Ingress` と `Certificate`（cert-manager）を作成・削除できる RBAC を持つ ServiceAccount を使用する（下記「独自ドメイン」参照）
 
 ### mariadb-lipl
 
@@ -132,7 +132,7 @@ spec:
 3. ユーザーが独自ドメインを登録すると、`lipl-api` が Kubernetes API 経由で以下を動的に作成する:
    - `Ingress`（該当ドメインをhostに持ち、`lipl-frontend` Serviceへ）
    - `Certificate`（cert-manager、上記Issuerを参照）
-4. `lipl-api` の ServiceAccount に `kigawa-net-lipl-main` namespace内での `ingresses`・`certificates.cert-manager.io` の作成/更新/削除権限を持つ `Role`/`RoleBinding` を付与する
+4. `lipl-api` の ServiceAccount に `platform-lipl-main` namespace内での `ingresses`・`certificates.cert-manager.io` の作成/更新/削除権限を持つ `Role`/`RoleBinding` を付与する
 5. 証明書発行成功（`Certificate` の `Ready` 条件）を `lipl-api` がポーリングまたは Watch し、DBの「検証済み」フラグを更新する
 
 ## Secrets（Bitwarden）
@@ -142,22 +142,22 @@ spec:
 | Secret名 | キー | 用途 |
 |----------|------|------|
 | `mariadb-lipl` | `root-pass`, `pass` | MariaDB root/appユーザーパスワード |
-| `lipl-api` | `stripe-secret-key`, `stripe-webhook-secret`, `claude-api-key`, `keycloak-client-secret`, `s3-access-key`, `s3-secret-key` | 外部サービス連携 |
+| `lipl-api` | `stripe-secret-key`, `stripe-webhook-secret`, `claude-api-key`, `keycloak-client-secret`, `r2-access-key-id`, `r2-secret-access-key` | 外部サービス連携（`r2-*` はCloudflare R2のS3互換APIトークン） |
 | `lipl-frontend` | `keycloak-client-secret`（OIDC confidential clientの場合） | フロントエンドのKeycloak連携 |
 
 実際の `bwSecretId`（Bitwarden側のUUID）は、Bitwarden Secrets Manager 上で事前に値を作成した上で取得する。ここでは値そのものは扱わない。
 
-新規namespace `kigawa-net-lipl-main` を `kigawa-system/secret-provider/bitwarden-sync-crn.yaml` の `TARGET_NAMESPACES` に追加すること（`bitwarden-sec` 認証トークンが同期されないと `BitwardenSecret` オペレータが機能しない）。
+新規namespace `platform-lipl-main` を `kigawa-system/secret-provider/bitwarden-sync-crn.yaml` の `TARGET_NAMESPACES` に追加すること（`bitwarden-sec` 認証トークンが同期されないと `BitwardenSecret` オペレータが機能しない）。
 
-## オブジェクトストレージ（未確定・要検討）
+## オブジェクトストレージ
 
-`platform` 内に既存の S3互換オブジェクトストレージは見つからなかった。選択肢:
+**Cloudflare R2 を採用する（確定）**。`platform` 内に既存のS3互換オブジェクトストレージは見つからず、クラスタ内MinIOやRook-Ceph RGWのような自前ホスト型ではなく、運用負荷ゼロ・エグレス無料の外部S3互換サービスであるR2を選ぶ。
 
-1. **クラスタ内 MinIO**（`rook-cephfs` 上に StatefulSet + PVC）— 自前で完全に管理できるが運用負荷が増える
-2. **Cloudflare R2**（外部・S3互換）— 運用負荷なし、エグレス無料。kigawa-net系プロジェクトでCloudflareを多用している実績があり親和性が高い
-3. **Rook-Cephのオブジェクトゲートウェイ（RGW）** — クラスタのCephクラスタが既にRGWを提供していれば追加インフラ不要だが、有効化状況は未確認
-
-**推奨: 2（Cloudflare R2）**。運用負荷が最小で、写真アップロードのエグレス（LP閲覧時の画像配信）コストもかからない。要ユーザー確認。
+- 写真アップロード（`requirements.md` の「写真アップロード制約」参照）は R2 バケットに保存する
+- バケット構成: 用途ごとに1バケット（例: `lipl-photos`）。店舗ID・写真IDでキー空間を分ける（例: `stores/<storeId>/photos/<photoId>.jpg`）
+- `lipl-api` から R2 の S3互換APIエンドポイントへアクセスする（アクセスキー/シークレットキーは Secrets 節の `lipl-api` BitwardenSecret に含める）
+- QRコード仕様・写真アップロード制約で規定された解像度リサイズ（フルHD/4K上限）はアップロード時に `lipl-api` 側で行い、リサイズ後の画像をR2に保存する（R2側の変換機能には依存しない）
+- LP公開時の画像配信は R2 のパブリックバケット機能、またはCloudflare経由のカスタムドメイン配信を利用し、エグレスコストを回避する
 
 ## CI/CD
 
@@ -180,5 +180,4 @@ MVP規模ではHPA（自動スケール）は不要。将来的な需要増に�
 1. **DNS**: `*.kigawa.net` ワイルドカードが実際に既存かどうかの確認（kinfra/infra リポジトリまたはDNSプロバイダ側の設定を確認）
 2. **HAProxy Ingressのフォールバックルーティング**: `<slug>-lipl.kigawa.net` の動的な多数ホストを1つのIngressでどう受けるか（ワイルドカードhost指定が可能か、あるいはdefault-backend方式にするか）の技術検証
 3. **cert-manager導入**: このクラスタに未導入。独自ドメイン機能の実装前に導入が必要（管理範囲がkinfra/infra側かplatform側か要確認）
-4. **オブジェクトストレージ**: MinIO自前ホスト vs Cloudflare R2 vs Ceph RGW のいずれにするか要決定
-5. **harbor-registry pull secret**: 新規namespaceでの同期方法（既存の仕組みを流用できるか、手動作成が必要か）を確認
+4. **harbor-registry pull secret**: 新規namespaceでの同期方法（既存の仕組みを流用できるか、手動作成が必要か）を確認
