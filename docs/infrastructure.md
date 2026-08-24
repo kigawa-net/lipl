@@ -25,24 +25,31 @@
 | Secret管理 | 平文はgitに置かない。`k8s.bitwarden.com/v1 BitwardenSecret` CRD で Bitwarden Secrets Manager から同期する。新規namespaceは `kigawa-system/secret-provider/bitwarden-sync-crn.yaml` の `TARGET_NAMESPACES` に追記が必要（`bitwarden-sec` 認証トークンの同期用） |
 | 認証 | Keycloak（`user.kigawa.net`）。アプリによって専用realmと共有realm（`kigawa-net`）が混在。requirements.md の通りLiplは専用realm（`lipl`）を新設する方針で問題ない |
 
-## デプロイフロー（dev / stg）
+## デプロイフロー（dev / stg / main（本番相当））
 
-Lipl は2環境構成で運用する（現時点で本番専用の第3環境「main」は用意しない。将来的に必要になれば `keruta` と同様の3環境構成に拡張する）。
+Lipl は3環境構成で運用する。
 
 | トリガー | 環境 | Namespace | ブランチ/イメージタグ |
 |---------|------|-----------|----------------------|
 | `lipl` リポジトリで PR に `deploy-preview` ラベルを付与 | **dev**（PRごとに独立） | `platform-lipl-dev-pr-<PR番号>` | `develop-<commit-sha>` |
 | `lipl` リポジトリの `main` へマージ | **stg** | `platform-lipl-stg` | `main-<commit-sha>`、`imagePullPolicy: IfNotPresent` |
+| `lipl` リポジトリで `deploy-prod.yml` を手動実行（`workflow_dispatch`） | **main（本番相当）** | `platform-lipl-main` | stgに現在デプロイされているものと同一のイメージタグ（再ビルドしない） |
 
 - **dev環境はPRごとに独立させる**。ArgoCD ApplicationSet（`platform` リポジトリの `apps/lipl-dev-appset.yml`）のPull Request Generatorが、`lipl` リポジトリで開いているPRを検出して自動的にApplication・namespace（`platform-lipl-dev-pr-<PR番号>`）を生成する。イメージタグ（`develop-<head_sha>`）もPRの最新コミットに追従してKustomize経由で動的に上書きされる
   - `lipl` はpublicリポジトリのため誰でもフォークからPRを作成できる。ラベルフィルタなしでは外部の任意のPRごとにnamespace/Deploymentが自動生成されてしまう（クラスタリソース濫用のリスク）。これを防ぐため、ApplicationSet側で `github.labels: [deploy-preview]` フィルタを設定し、メンテナが明示的に `deploy-preview` ラベルを付与したPRのみdev環境を生成する運用にする。CI（`.github/workflows/deploy-dev.yml`）自体はラベルに関わらず全PRでテスト・イメージビルドを実行する（テストの早期フィードバックのため）
   - `lipl` 側CI（`.github/workflows/deploy-dev.yml`）はDockerイメージのビルド・pushのみを行う。`platform` リポジトリへのマニフェスト更新コミットは不要（ApplicationSetが直接制御するため）
   - PRがクローズ/マージされると対応するApplicationは自動的に削除される（`resources-finalizer.argocd.argoproj.io` によりDeployment/Serviceはカスケード削除。namespace自体の削除挙動はArgoCDバージョン依存のため要検証。残存する場合は定期的な確認・削除運用を検討）
   - dev環境ではIngressを持たない（PR個別のドメイン割り当てはHAProxy Ingressの動的ホスト対応が未検証のため見送り。動作確認は `kubectl port-forward` 等で行う）
-- **stg環境が実質的にLiplの唯一の稼働環境**（現時点で別途の本番環境はない）。`docs/requirements.md` に記載の実ドメイン（`lipl.kigawa.net`、`<slug>-lipl.kigawa.net`）はstg環境に割り当てる
-- **外部サービスの認証情報はdev/stgで分離する**: Stripeはdev環境でテストモードのAPIキーを使う（本番決済情報を扱わない）。Keycloakのrealm/clientもdev/stgで分離する（`lipl-dev` client等）。Claude APIキーはコスト管理のため分離を推奨
-- dev/stg それぞれに専用の MariaDB（`mariadb-lipl-dev` / `mariadb-lipl-stg`）を用意する（データを共有しない）
-- オブジェクトストレージ（Cloudflare R2）はdev/stgでバケットまたはキープレフィックスを分離する（例: `lipl-photos-dev` / `lipl-photos`）
+- **stgは`main`ブランチへのマージで自動デプロイされる検証環境**。`lipl` 側CI（`.github/workflows/deploy-stg.yml`）がビルド・テストを行い、GitHub App認証で `platform` リポジトリの `lipl/stg/*.yaml` を更新する
+- **main（本番相当）はstgで検証済みのイメージをそのまま手動プロモートする**（再ビルドしない）。`.github/workflows/deploy-prod.yml`（`workflow_dispatch`）が `platform` リポジトリの `lipl/stg/lipl-api.yaml` / `lipl-frontend.yaml` から現在のイメージタグを読み取り、`lipl/main/*.yaml` へそのままコピー・コミットする。stgと本番で異なるビルドが動く事態を避けるための設計。ビルド・テストジョブは持たない（stgで既に通過済みのため）
+- `docs/requirements.md` に記載の実ドメインは以下のように割り当てる:
+  - `lipl.kigawa.net`（メインドメイン） → **main（本番相当）**
+  - `stg-lipl.kigawa.net` → stg（内部確認用）
+  - `<slug>-lipl.kigawa.net`（店舗別LP） → main環境の実装完了後に対応（HAProxy Ingressの動的ホスト対応が未検証のため現時点では未実装）
+  - dev環境はIngressを持たないため対象外
+- **外部サービスの認証情報はdev/stg/mainで分離する**: Stripeはdev/stgでテストモードのAPIキーを使い、mainのみ本番モードのAPIキーを使う（決済情報を扱うため取り扱いに注意）。Keycloakのrealm/clientもdev/stg/mainで分離する（`lipl-dev` / `lipl-stg` / `lipl` client等）。Claude APIキーはコスト管理のため分離を推奨
+- dev/stg/main それぞれに専用の MariaDB（`mariadb-lipl-dev` / `mariadb-lipl-stg` / `mariadb-lipl-main`）を用意する（データを共有しない）
+- オブジェクトストレージ（Cloudflare R2）はdev/stg/mainでバケットまたはキープレフィックスを分離する（例: `lipl-photos-dev` / `lipl-photos-stg` / `lipl-photos`）
 
 **cert-manager は `platform` 内に存在しない。** 既存アプリはすべて `kigawa.net` サブドメインのみを使い、独自ドメイン機能を持たないため、cert-manager を使う必要がなかったと考えられる。**Lipl の独自ドメイン機能（Pro）はこのクラスタにとって新規の技術要素であり、cert-manager の導入が前提になる。**
 
