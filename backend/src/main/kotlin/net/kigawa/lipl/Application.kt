@@ -1,5 +1,6 @@
 package net.kigawa.lipl
 
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -30,7 +31,7 @@ fun Application.module() {
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             logger.error("Unhandled exception", cause)
-            call.respondText(status = io.ktor.http.HttpStatusCode.InternalServerError) {
+            call.respondText(status = HttpStatusCode.InternalServerError) {
                 "internal server error"
             }
         }
