@@ -7,7 +7,9 @@ COPY src /app/src
 RUN gradle shadowJar --no-daemon
 
 FROM eclipse-temurin:21-jre-alpine
+RUN addgroup -S lipl && adduser -S lipl -G lipl
 WORKDIR /app
-COPY --from=build /app/build/libs/*-all.jar /app/lipl-api.jar
+COPY --from=build --chown=lipl:lipl /app/build/libs/*-all.jar /app/lipl-api.jar
+USER lipl
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/lipl-api.jar"]
