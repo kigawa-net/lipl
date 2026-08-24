@@ -230,3 +230,4 @@ MVP規模ではHPA（自動スケール）は不要。dev環境は検証専用�
 3. **cert-manager導入**: このクラスタに未導入。独自ドメイン機能の実装前に導入が必要（管理範囲がkinfra/infra側かplatform側か要確認）
 4. ~~**harbor-registry pull secret**: 新規namespaceでの同期方法~~ → 解決済み。既存の `kigawa-system/secret-provider`（`kigawa-net-k8s` リポジトリ）の `harbor-sync-crn.yaml` / `bitwarden-sync-crn.yaml` の `TARGET_NAMESPACES` に `platform-lipl-dev` / `platform-lipl-stg` を追加した（[kigawa-net-k8s#195](https://github.com/kigawa-net/kigawa-net-k8s/pull/195)、マージ待ち）
 5. **PR単位のdev環境上書きによる競合**: 複数PRが並行している間、dev環境が最後のpushで上書きされる仕様でよいか（個別プレビュー環境が必要になった場合は別途ApplicationSet等での対応を検討）
+6. ~~**`platform` リポジトリのArgoCD登録**: 手動 `kubectl apply` が必要~~ → 解決済み。既存の `kigawa-net-k8s` のルートApp（`apps/apps-app.yml`、稼働中）の再帰同期を利用し、`platform-app`（`platform` リポジトリをブートストラップするApplication）を `kigawa-net-k8s` の `apps/` 配下に追加した（[kigawa-net-k8s#195](https://github.com/kigawa-net/kigawa-net-k8s/pull/195)、マージ待ち）。マージ後は手動操作なしで `platform-app` → `platform-lipl-dev-app` / `platform-lipl-stg-app` の順に連鎖的にArgoCD登録される
