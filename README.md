@@ -12,6 +12,7 @@ HTML、CSS、サーバー、ドメイン、DNSの知識がなくても、店舗�
 | ファイル | 内容 |
 |----------|------|
 | [docs/requirements.md](docs/requirements.md) | 要件定義（MVP・画面・料金・技術スタック） |
+| [docs/infrastructure.md](docs/infrastructure.md) | インフラ設計（kigawa-net-k8s上のデプロイ構成） |
 | [CLAUDE.md](CLAUDE.md) | 開発規約（ブランチ・コミット・コーディング規約） |
 
 ## コンセプト
