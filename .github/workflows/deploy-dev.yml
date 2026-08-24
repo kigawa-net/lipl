@@ -81,13 +81,23 @@ jobs:
         with:
           access_token: ${{ secrets.BWS_ACCESS_TOKEN }}
           secrets: |
-            cc3968a1-fa70-443a-82ae-b4b0004e3ca0 > PLATFORM_REPO_TOKEN
+            320f3982-890e-4865-8c15-b4b0005154aa > GH_APP_ID
+            97b6eba7-6bd2-418d-9d64-b48a007a097a > GH_APP_PRIVATE_KEY
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ env.GH_APP_ID }}
+          private-key: ${{ env.GH_APP_PRIVATE_KEY }}
+          owner: kigawa-net
+          repositories: platform
 
       - name: Checkout platform repo
         uses: actions/checkout@v4
         with:
           repository: kigawa-net/platform
-          token: ${{ env.PLATFORM_REPO_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           path: platform
 
       - name: Update image tags for dev

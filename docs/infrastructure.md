@@ -205,7 +205,9 @@ GitHub Actions（`lipl` リポジトリ）で2系統のワークフローを持�
 | 環境変数名 | 用途 | Bitwarden Secret | 状態 |
 |-----------|------|-------------------|------|
 | `HARBOR_USERNAME` / `HARBOR_PASSWORD` | `harbor.kigawa.net` への `docker login` | 既存の `harbor-user` / `harbor-pass`（`keruta` 等と共通） | 設定済み |
-| `PLATFORM_REPO_TOKEN` | `kigawa-net/platform` への push 権限を持つ GitHub PAT（既定の `GITHUB_TOKEN` は他リポジトリへの書き込み権限を持たないため） | 新規作成した `lipl-platform-repo-token`（値は仮のプレースホルダー） | **値の設定が未完了**。GitHubはAPI経由でのPAT発行を許可していないため、GitHub UI（Settings > Developer settings > Fine-grained personal access tokens）で `kigawa-net/platform` への `contents: write` 権限を持つPATを作成し、`bws secret edit cc3968a1-fa70-443a-82ae-b4b0004e3ca0 <実際のPAT>` で値を更新する必要がある |
+| `GH_APP_ID` / `GH_APP_PRIVATE_KEY` | `kigawa-net/platform` へのpush用トークンを [`actions/create-github-app-token`](https://github.com/actions/create-github-app-token) で発行するための GitHub App 認証情報 | 既存の GitHub App **`kigawa-net`**（app_id `4316503`、`contents: write` 権限、org全体にインストール済み）。app_idを新規Secret `github-app-kigawa-net-appid` として作成し、既存の private key Secret `github-app-kigawa-net` と組み合わせて使用 | 設定済み |
+
+**PATではなくGitHub Appを採用した理由**: 長期間有効な生のPATをBitwardenに保管する代わりに、ワークフロー実行時に短命なインストールトークンを都度発行する方式にすることで、トークン漏洩時の影響範囲と有効期間を抑える。既存インフラに `contents: write` 権限を持つ組織共通のGitHub App（`kigawa-net`）が既にorg全体へインストール済みだったため、新規App作成は不要だった。
 
 Bitwarden Secrets Manager側の Organization ID は既存インフラと共通（`a2b57f3d-6e2b-4467-b499-b31e00bfd804`、`kigawa-net-k8s` のCLAUDE.md参照）。Secret IDは各ワークフローファイル（`.github/workflows/deploy-dev.yml` / `deploy-stg.yml`）に既に反映済み。
 
