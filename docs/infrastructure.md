@@ -2,16 +2,18 @@
 
 > 関連ドキュメント: [requirements.md](requirements.md) | [../README.md](../README.md) | [../CLAUDE.md](../CLAUDE.md)
 
-このドキュメントは `docs/requirements.md` の要件を、既存の kigawa-net 基盤（[kigawa-net-k8s](https://github.com/kigawa-net/kigawa-net-k8s) で ArgoCD GitOps 管理されているクラスタ）の上にどう実装するかを定義する。
+このドキュメントは `docs/requirements.md` の要件を、既存の kigawa-net 基盤（`kigawa-net/platform` で ArgoCD GitOps 管理されているクラスタ）の上にどう実装するかを定義する。
+
+> **注記**: `kigawa-net/platform` は本ドキュメント作成時点ではまだ存在しないリポジトリ名。調査は現行の [kigawa-net-k8s](https://github.com/kigawa-net/kigawa-net-k8s) リポジトリ（同様にArgoCD GitOpsでこのクラスタを管理している）に対して行った。`platform` は `kigawa-net-k8s` を指す想定名として本ドキュメント内で使用している（リネームまたは移行が前提）。
 
 ## 前提（既存インフラの調査結果）
 
-`kigawa-net-k8s` リポジトリの既存アプリ（keruta, lp 等）を調査し、以下の規約を確認した。Lipl もこれに従う。
+`platform`（調査時点では `kigawa-net-k8s`）リポジトリの既存アプリ（keruta, lp 等）を調査し、以下の規約を確認した。Lipl もこれに従う。
 
 | 項目 | 既存の規約 |
 |------|-----------|
-| GitOpsリポジトリ | `kigawa-net-k8s`（`main` へのマージで自動デプロイ） |
-| マニフェスト配置 | app本体のリポジトリ（`lipl`）には k8s マニフェストは置かず、`kigawa-net-k8s` 側の `lipl/main/` に配置する |
+| GitOpsリポジトリ | `platform`（`main` へのマージで自動デプロイ） |
+| マニフェスト配置 | app本体のリポジトリ（`lipl`）には k8s マニフェストは置かず、`platform` 側の `lipl/main/` に配置する |
 | ArgoCD Application | `apps/lipl-main.yml` を新設し、`kigawa-net` AppProject 配下に追加 |
 | Namespace命名 | `kigawa-net-lipl-main`（`kigawa-net-keruta-main` 等と同様） |
 | Ingress Class | `haproxy`（nginx ではない） |
@@ -23,7 +25,7 @@
 | Secret管理 | 平文はgitに置かない。`k8s.bitwarden.com/v1 BitwardenSecret` CRD で Bitwarden Secrets Manager から同期する。新規namespaceは `kigawa-system/secret-provider/bitwarden-sync-crn.yaml` の `TARGET_NAMESPACES` に追記が必要（`bitwarden-sec` 認証トークンの同期用） |
 | 認証 | Keycloak（`user.kigawa.net`）。アプリによって専用realmと共有realm（`kigawa-net`）が混在。requirements.md の通りLiplは専用realm（`lipl`）を新設する方針で問題ない |
 
-**cert-manager は `kigawa-net-k8s` 内に存在しない。** 既存アプリはすべて `kigawa.net` サブドメインのみを使い、独自ドメイン機能を持たないため、cert-manager を使う必要がなかったと考えられる。**Lipl の独自ドメイン機能（Pro）はこのクラスタにとって新規の技術要素であり、cert-manager の導入が前提になる。**
+**cert-manager は `platform` 内に存在しない。** 既存アプリはすべて `kigawa.net` サブドメインのみを使い、独自ドメイン機能を持たないため、cert-manager を使う必要がなかったと考えられる。**Lipl の独自ドメイン機能（Pro）はこのクラスタにとって新規の技術要素であり、cert-manager の導入が前提になる。**
 
 ## 要件定義への訂正（このドキュメント作成中に発見）
 
@@ -38,7 +40,7 @@
 
 ## コンポーネント構成
 
-`kigawa-net-k8s` リポジトリの `lipl/main/` に以下を配置する。
+`platform` リポジトリの `lipl/main/` に以下を配置する。
 
 ```
 lipl/main/
@@ -149,7 +151,7 @@ spec:
 
 ## オブジェクトストレージ（未確定・要検討）
 
-`kigawa-net-k8s` 内に既存の S3互換オブジェクトストレージは見つからなかった。選択肢:
+`platform` 内に既存の S3互換オブジェクトストレージは見つからなかった。選択肢:
 
 1. **クラスタ内 MinIO**（`rook-cephfs` 上に StatefulSet + PVC）— 自前で完全に管理できるが運用負荷が増える
 2. **Cloudflare R2**（外部・S3互換）— 運用負荷なし、エグレス無料。kigawa-net系プロジェクトでCloudflareを多用している実績があり親和性が高い
@@ -160,8 +162,8 @@ spec:
 ## CI/CD
 
 1. GitHub Actions（`lipl` リポジトリ）: push to `main` → Docker イメージビルド（frontend/backend）→ `harbor.kigawa.net/private/lipl-frontend:main-<sha>` / `lipl-api:main-<sha>` へ push
-2. 同ワークフロー、または後続ジョブが `kigawa-net-k8s` リポジトリの `lipl/main/lipl-frontend.yaml` / `lipl-api.yaml` の image タグを更新してコミット（他アプリのCIパターンを参考に実装。具体的な既存ワークフローは各アプリのソースリポジトリ側にあり、今回は未調査）
-3. ArgoCD が `kigawa-net-k8s` の変更を検知し自動sync
+2. 同ワークフロー、または後続ジョブが `platform` リポジトリの `lipl/main/lipl-frontend.yaml` / `lipl-api.yaml` の image タグを更新してコミット（他アプリのCIパターンを参考に実装。具体的な既存ワークフローは各アプリのソースリポジトリ側にあり、今回は未調査）
+3. ArgoCD が `platform` の変更を検知し自動sync
 
 ## リソース見積もり（初期・個人開発規模）
 
@@ -177,6 +179,6 @@ MVP規模ではHPA（自動スケール）は不要。将来的な需要増に�
 
 1. **DNS**: `*.kigawa.net` ワイルドカードが実際に既存かどうかの確認（kinfra/infra リポジトリまたはDNSプロバイダ側の設定を確認）
 2. **HAProxy Ingressのフォールバックルーティング**: `<slug>-lipl.kigawa.net` の動的な多数ホストを1つのIngressでどう受けるか（ワイルドカードhost指定が可能か、あるいはdefault-backend方式にするか）の技術検証
-3. **cert-manager導入**: このクラスタに未導入。独自ドメイン機能の実装前に導入が必要（管理範囲がkinfra/infra側かkigawa-net-k8s側か要確認）
+3. **cert-manager導入**: このクラスタに未導入。独自ドメイン機能の実装前に導入が必要（管理範囲がkinfra/infra側かplatform側か要確認）
 4. **オブジェクトストレージ**: MinIO自前ホスト vs Cloudflare R2 vs Ceph RGW のいずれにするか要決定
 5. **harbor-registry pull secret**: 新規namespaceでの同期方法（既存の仕組みを流用できるか、手動作成が必要か）を確認
