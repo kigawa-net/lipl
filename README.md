@@ -75,6 +75,7 @@ Instagramしか持っていない飲食店でも、誰でも簡単に公式ペ�
 - AI質問5回
 - 写真40枚（4K）
 - メニュー30品
+- 予約リンク1件
 - ロゴ非表示
 - お知らせ投稿
 - アクセス解析（90日）
@@ -86,6 +87,7 @@ Instagramしか持っていない飲食店でも、誰でも簡単に公式ペ�
 - LP生成（初回＋再生成 合計月6回まで）
 - AI質問10回
 - 写真60枚（4K）
+- メニュー30品
 - 独自ドメイン
 - お問い合わせフォーム
 - SEO設定
@@ -117,6 +119,10 @@ Instagramしか持っていない飲食店でも、誰でも簡単に公式ペ�
 - cert-manager
 - GitHub Actions
 
+### 認証
+
+- Keycloak（`user.kigawa.net` で運用中。OIDC + JWT検証）
+
 ### 決済・AI
 
 - Stripe
@@ -133,6 +139,7 @@ Ingress
 React Router v8 フロントエンド
 ↓
 Ktor API
+├─ Keycloak（認証）
 ├─ MariaDB
 ├─ オブジェクトストレージ
 ├─ Stripe
