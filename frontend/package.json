@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "lipl-frontend",
   "private": true,
   "type": "module",
   "scripts": {
