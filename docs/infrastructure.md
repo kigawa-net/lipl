@@ -31,10 +31,11 @@ Lipl は2環境構成で運用する（現時点で本番専用の第3環境「m
 
 | トリガー | 環境 | Namespace | ブランチ/イメージタグ |
 |---------|------|-----------|----------------------|
-| `lipl` リポジトリで PR を作成・更新 | **dev**（PRごとに独立） | `platform-lipl-dev-pr-<PR番号>` | `develop-<commit-sha>` |
+| `lipl` リポジトリで PR に `deploy-preview` ラベルを付与 | **dev**（PRごとに独立） | `platform-lipl-dev-pr-<PR番号>` | `develop-<commit-sha>` |
 | `lipl` リポジトリの `main` へマージ | **stg** | `platform-lipl-stg` | `main-<commit-sha>`、`imagePullPolicy: IfNotPresent` |
 
 - **dev環境はPRごとに独立させる**。ArgoCD ApplicationSet（`platform` リポジトリの `apps/lipl-dev-appset.yml`）のPull Request Generatorが、`lipl` リポジトリで開いているPRを検出して自動的にApplication・namespace（`platform-lipl-dev-pr-<PR番号>`）を生成する。イメージタグ（`develop-<head_sha>`）もPRの最新コミットに追従してKustomize経由で動的に上書きされる
+  - `lipl` はpublicリポジトリのため誰でもフォークからPRを作成できる。ラベルフィルタなしでは外部の任意のPRごとにnamespace/Deploymentが自動生成されてしまう（クラスタリソース濫用のリスク）。これを防ぐため、ApplicationSet側で `github.labels: [deploy-preview]` フィルタを設定し、メンテナが明示的に `deploy-preview` ラベルを付与したPRのみdev環境を生成する運用にする。CI（`.github/workflows/deploy-dev.yml`）自体はラベルに関わらず全PRでテスト・イメージビルドを実行する（テストの早期フィードバックのため）
   - `lipl` 側CI（`.github/workflows/deploy-dev.yml`）はDockerイメージのビルド・pushのみを行う。`platform` リポジトリへのマニフェスト更新コミットは不要（ApplicationSetが直接制御するため）
   - PRがクローズ/マージされると対応するApplicationは自動的に削除される（`resources-finalizer.argocd.argoproj.io` によりDeployment/Serviceはカスケード削除。namespace自体の削除挙動はArgoCDバージョン依存のため要検証。残存する場合は定期的な確認・削除運用を検討）
   - dev環境ではIngressを持たない（PR個別のドメイン割り当てはHAProxy Ingressの動的ホスト対応が未検証のため見送り。動作確認は `kubectl port-forward` 等で行う）
