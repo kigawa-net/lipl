@@ -31,12 +31,15 @@ Lipl は2環境構成で運用する（現時点で本番専用の第3環境「m
 
 | トリガー | 環境 | Namespace | ブランチ/イメージタグ |
 |---------|------|-----------|----------------------|
-| `lipl` リポジトリで PR を作成・更新 | **dev** | `platform-lipl-dev` | `develop-<commit-sha>`、`imagePullPolicy: Always` |
+| `lipl` リポジトリで PR に `deploy-preview` ラベルを付与 | **dev**（PRごとに独立） | `platform-lipl-dev-pr-<PR番号>` | `develop-<commit-sha>` |
 | `lipl` リポジトリの `main` へマージ | **stg** | `platform-lipl-stg` | `main-<commit-sha>`、`imagePullPolicy: IfNotPresent` |
 
-- **dev環境はPRごとに独立させず、単一の共有環境**とする（PRイベントごとに同じ `platform-lipl-dev` namespaceへ上書きデプロイする。keruta の `dev/` 環境と同型）。複数PRが並行して開いている場合、最後にpushされたPRの内容がdev環境に反映される。PRごとの個別プレビュー環境（Namespace分離）が必要になった場合は別途検討する
+- **dev環境はPRごとに独立させる**。ArgoCD ApplicationSet（`platform` リポジトリの `apps/lipl-dev-appset.yml`）のPull Request Generatorが、`lipl` リポジトリで開いているPRを検出して自動的にApplication・namespace（`platform-lipl-dev-pr-<PR番号>`）を生成する。イメージタグ（`develop-<head_sha>`）もPRの最新コミットに追従してKustomize経由で動的に上書きされる
+  - `lipl` はpublicリポジトリのため誰でもフォークからPRを作成できる。ラベルフィルタなしでは外部の任意のPRごとにnamespace/Deploymentが自動生成されてしまう（クラスタリソース濫用のリスク）。これを防ぐため、ApplicationSet側で `github.labels: [deploy-preview]` フィルタを設定し、メンテナが明示的に `deploy-preview` ラベルを付与したPRのみdev環境を生成する運用にする。CI（`.github/workflows/deploy-dev.yml`）自体はラベルに関わらず全PRでテスト・イメージビルドを実行する（テストの早期フィードバックのため）
+  - `lipl` 側CI（`.github/workflows/deploy-dev.yml`）はDockerイメージのビルド・pushのみを行う。`platform` リポジトリへのマニフェスト更新コミットは不要（ApplicationSetが直接制御するため）
+  - PRがクローズ/マージされると対応するApplicationは自動的に削除される（`resources-finalizer.argocd.argoproj.io` によりDeployment/Serviceはカスケード削除。namespace自体の削除挙動はArgoCDバージョン依存のため要検証。残存する場合は定期的な確認・削除運用を検討）
+  - dev環境ではIngressを持たない（PR個別のドメイン割り当てはHAProxy Ingressの動的ホスト対応が未検証のため見送り。動作確認は `kubectl port-forward` 等で行う）
 - **stg環境が実質的にLiplの唯一の稼働環境**（現時点で別途の本番環境はない）。`docs/requirements.md` に記載の実ドメイン（`lipl.kigawa.net`、`<slug>-lipl.kigawa.net`）はstg環境に割り当てる
-- dev環境は内部検証専用のため、実ドメインとは別のドメイン空間（`lipl-dev.kigawa.net`、`<slug>-lipl-dev.kigawa.net`）を使う（既存アプリの `<service>-dev.kigawa.net` 規則に準拠）
 - **外部サービスの認証情報はdev/stgで分離する**: Stripeはdev環境でテストモードのAPIキーを使う（本番決済情報を扱わない）。Keycloakのrealm/clientもdev/stgで分離する（`lipl-dev` client等）。Claude APIキーはコスト管理のため分離を推奨
 - dev/stg それぞれに専用の MariaDB（`mariadb-lipl-dev` / `mariadb-lipl-stg`）を用意する（データを共有しない）
 - オブジェクトストレージ（Cloudflare R2）はdev/stgでバケットまたはキープレフィックスを分離する（例: `lipl-photos-dev` / `lipl-photos`）
@@ -56,20 +59,29 @@ Lipl は2環境構成で運用する（現時点で本番専用の第3環境「m
 
 ## コンポーネント構成
 
-`platform` リポジトリに `lipl/dev/` と `lipl/stg/` を配置する（内容は同型。keruta の `keruta/dev/` / `keruta/stg/` と同様、環境ごとに丸ごと複製する）。
+`platform` リポジトリに `lipl/dev/` と `lipl/stg/` を配置する。PRごとに動的生成されるdevと、単一の静的環境であるstgとで構成が異なる。
 
 ```
-lipl/stg/                     # lipl/dev/ も同型（namespace・ドメイン・イメージタグのみ異なる）
-├── ns.yaml                  # Namespace: platform-lipl-stg（devは platform-lipl-dev）
+lipl/stg/                     # 静的環境。既存keruta/stg/等と同様、Applicationは1つ固定
+├── ns.yaml                  # Namespace: platform-lipl-stg
 ├── lipl-frontend.yaml        # Deployment + Service + BitwardenSecret
 ├── lipl-api.yaml              # Deployment + Service + BitwardenSecret
 ├── mariadb-lipl.yml          # MariaDB + Database + User + Grant (CRD)
-├── ingress.yaml              # Ingress（lipl.kigawa.net、<slug>-lipl.kigawa.net 用。devは lipl-dev.kigawa.net 等）
-├── custom-domain-rbac.yaml   # lipl-api が動的にIngress/Certificateを作成するためのRBAC（stgのみ。独自ドメインはPro機能なのでdevでは省略可）
-└── cert-manager-issuer.yaml  # ClusterIssuer（クラスタ未導入の場合のみ、新設が必要。クラスタ共通のため1つで両環境から参照可）
+├── ingress.yaml              # Ingress（lipl.kigawa.net、<slug>-lipl.kigawa.net 用）
+├── custom-domain-rbac.yaml   # lipl-api が動的にIngress/Certificateを作成するためのRBAC（独自ドメインはPro機能）
+└── cert-manager-issuer.yaml  # ClusterIssuer（クラスタ未導入の場合のみ、新設が必要）
+
+lipl/dev/                     # 動的環境。ApplicationSet（apps/lipl-dev-appset.yml）がPRごとに
+│                              # namespace・imageタグを上書きしてApplicationを生成するKustomizeベース
+├── kustomization.yaml        # namespace/images はApplicationSetのテンプレートから注入（ベースには持たせない）
+├── lipl-frontend.yaml        # Deployment + Service
+└── lipl-api.yaml              # Deployment + Service
+                               # ns.yaml・ingress.yaml・mariadb・BitwardenSecretはdevには置かない
+                               # （namespaceはCreateNamespace=true任せ、Ingressは動的ホスト対応が未検証のため見送り、
+                               #   DB/Secretは対応機能がLipl側に未実装のため後日追加）
 ```
 
-既存の `keruta/dev/` / `keruta/stg/`（各々に `ktse.yaml` + `ktcl-front.yaml` + `mariadb-ktse.yml` + `ingress.yaml` を複製）と同型の構成。
+stgは既存の `keruta/main/`（`ktse.yaml` + `ktcl-front.yaml` + `mariadb-ktse.yml` + `ingress.yaml`）と同型の静的構成。devはArgoCD ApplicationSetのPull Request Generatorパターンを採用しており、既存アプリには無い新しい構成。
 
 ### lipl-frontend
 
@@ -193,7 +205,23 @@ GitHub Actions（`lipl` リポジトリ）で2系統のワークフローを持�
 2. 後続ジョブが `platform` リポジトリの `lipl/stg/lipl-frontend.yaml` / `lipl-api.yaml` の image タグを更新してコミット
 3. ArgoCD が `platform` の変更を検知し `platform-lipl-stg` へ自動sync
 
-具体的な既存ワークフロー実装（イメージタグ更新〜コミットの方式）は各アプリのソースリポジトリ側にあり、今回は未調査。実装時に既存アプリ（keruta等）のワークフローを参考にする。
+実装は `.github/workflows/deploy-dev.yml`（PR時）/ `deploy-stg.yml`（`main`マージ時）。各ワークフローは以下の順で実行する: バックエンド（`./gradlew build`）・フロントエンド（`npm run lint && typecheck && build`）のテスト → 両方成功した場合のみ Docker イメージビルド・push → `platform` リポジトリのマニフェスト更新・コミット・push。
+
+### Secret管理（Bitwarden Secrets Manager）
+
+クラスタ内のSecret管理と同様、CI（GitHub Actions）側のSecretも生の値をGitHubに直接登録せず、Bitwarden Secrets Manager から [`bitwarden/sm-action`](https://github.com/bitwarden/sm-action) 経由で取得する。
+
+- `lipl` リポジトリに設定するGitHub Secretは **`BWS_ACCESS_TOKEN`（Bitwarden Machine Account のアクセストークン）1つのみ**（未設定。要対応）
+- ワークフロー内で以下をBitwarden Secrets Managerから取得する:
+
+| 環境変数名 | 用途 | Bitwarden Secret | 状態 |
+|-----------|------|-------------------|------|
+| `HARBOR_USERNAME` / `HARBOR_PASSWORD` | `harbor.kigawa.net` への `docker login` | 既存の `harbor-user` / `harbor-pass`（`keruta` 等と共通） | 設定済み |
+| `GH_APP_ID` / `GH_APP_PRIVATE_KEY` | `kigawa-net/platform` へのpush用トークンを [`actions/create-github-app-token`](https://github.com/actions/create-github-app-token) で発行するための GitHub App 認証情報 | 既存の GitHub App **`kigawa-net`**（app_id `4316503`、`contents: write` 権限、org全体にインストール済み）。app_idを新規Secret `github-app-kigawa-net-appid` として作成し、既存の private key Secret `github-app-kigawa-net` と組み合わせて使用 | 設定済み |
+
+**PATではなくGitHub Appを採用した理由**: 長期間有効な生のPATをBitwardenに保管する代わりに、ワークフロー実行時に短命なインストールトークンを都度発行する方式にすることで、トークン漏洩時の影響範囲と有効期間を抑える。既存インフラに `contents: write` 権限を持つ組織共通のGitHub App（`kigawa-net`）が既にorg全体へインストール済みだったため、新規App作成は不要だった。
+
+Bitwarden Secrets Manager側の Organization ID は既存インフラと共通（`a2b57f3d-6e2b-4467-b499-b31e00bfd804`、`kigawa-net-k8s` のCLAUDE.md参照）。Secret IDは各ワークフローファイル（`.github/workflows/deploy-dev.yml` / `deploy-stg.yml`）に既に反映済み。
 
 ## リソース見積もり（初期・個人開発規模）
 
@@ -209,8 +237,10 @@ MVP規模ではHPA（自動スケール）は不要。dev環境は検証専用�
 
 ## 未確定・要確認事項（実装着手前に解決すべき）
 
-1. **DNS**: `*.kigawa.net` ワイルドカードが実際に既存かどうかの確認（kinfra/infra リポジトリまたはDNSプロバイダ側の設定を確認）。同様に `*-dev.kigawa.net` 相当（dev環境用）が既存アプリの `<service>-dev.kigawa.net` で使われている解決方式も確認する
-2. **HAProxy Ingressのフォールバックルーティング**: `<slug>-lipl.kigawa.net`（stg）・`<slug>-lipl-dev.kigawa.net`（dev）の動的な多数ホストを1つのIngressでどう受けるか（ワイルドカードhost指定が可能か、あるいはdefault-backend方式にするか）の技術検証
+1. **DNS**: `*.kigawa.net` ワイルドカードが実際に既存かどうかの確認（kinfra/infra リポジトリまたはDNSプロバイダ側の設定を確認）。stg環境の `lipl.kigawa.net` / `<slug>-lipl.kigawa.net` 用（dev環境はIngressを持たないため対象外）
+2. **HAProxy Ingressのフォールバックルーティング**: `<slug>-lipl.kigawa.net`（stg）の動的な多数ホストを1つのIngressでどう受けるか（ワイルドカードhost指定が可能か、あるいはdefault-backend方式にするか）の技術検証
 3. **cert-manager導入**: このクラスタに未導入。独自ドメイン機能の実装前に導入が必要（管理範囲がkinfra/infra側かplatform側か要確認）
-4. **harbor-registry pull secret**: 新規namespace（`platform-lipl-dev`, `platform-lipl-stg`）での同期方法（既存の仕組みを流用できるか、手動作成が必要か）を確認
-5. **PR単位のdev環境上書きによる競合**: 複数PRが並行している間、dev環境が最後のpushで上書きされる仕様でよいか（個別プレビュー環境が必要になった場合は別途ApplicationSet等での対応を検討）
+4. ~~**harbor-registry pull secret（PRごとに動的生成されるdev namespace向け）**~~ → 解決済み。`kigawa-system/secret-provider` のCronJobを、静的 `TARGET_NAMESPACES` リストに加えて `platform-lipl-dev-pr-*` にマッチする実在namespaceを正規表現で動的検出するロジックに拡張した（[kigawa-net-k8s#195](https://github.com/kigawa-net/kigawa-net-k8s/pull/195)。モックkubectlでロジック自体の動作は確認済みだが、実クラスタでの動作は未確認）
+5. ~~**PR単位のdev環境上書きによる競合**~~ → 解決済み。ArgoCD ApplicationSet（Pull Request Generator）でPRごとに独立したnamespaceを動的生成する方式に変更した（[kigawa-net/platform#1](https://github.com/kigawa-net/platform/pull/1)）
+6. ~~**`platform` リポジトリのArgoCD登録**: 手動 `kubectl apply` が必要~~ → 解決済み。既存の `kigawa-net-k8s` のルートApp（`apps/apps-app.yml`、稼働中）の再帰同期を利用し、`platform-app`（`platform` リポジトリをブートストラップするApplication）を `kigawa-net-k8s` の `apps/` 配下に追加した（[kigawa-net-k8s#195](https://github.com/kigawa-net/kigawa-net-k8s/pull/195)、マージ待ち）。マージ後は手動操作なしで `platform-app` → `platform-lipl-dev-appset`（PRごとにApplicationを動的生成） / `platform-lipl-stg-app` の順に連鎖的にArgoCD登録される
+7. **ApplicationSetコントローラーの有効化確認**: `kigawa-net-k8s` / `platform` いずれのリポジトリにも `ApplicationSet` リソースの利用実績がなく、このクラスタのArgoCDで ApplicationSet コントローラー（`argocd-applicationset-controller`）が有効になっているか未確認。ArgoCD 2.3以降は標準構成に含まれることが多いが、このクラスタのインストール方法によっては別途有効化が必要な場合がある。無効な場合、`apps/lipl-dev-appset.yml` は登録されるがPRごとのApplicationが一切生成されない
