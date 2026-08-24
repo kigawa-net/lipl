@@ -228,5 +228,5 @@ MVP規模ではHPA（自動スケール）は不要。dev環境は検証専用�
 1. **DNS**: `*.kigawa.net` ワイルドカードが実際に既存かどうかの確認（kinfra/infra リポジトリまたはDNSプロバイダ側の設定を確認）。同様に `*-dev.kigawa.net` 相当（dev環境用）が既存アプリの `<service>-dev.kigawa.net` で使われている解決方式も確認する
 2. **HAProxy Ingressのフォールバックルーティング**: `<slug>-lipl.kigawa.net`（stg）・`<slug>-lipl-dev.kigawa.net`（dev）の動的な多数ホストを1つのIngressでどう受けるか（ワイルドカードhost指定が可能か、あるいはdefault-backend方式にするか）の技術検証
 3. **cert-manager導入**: このクラスタに未導入。独自ドメイン機能の実装前に導入が必要（管理範囲がkinfra/infra側かplatform側か要確認）
-4. **harbor-registry pull secret**: 新規namespace（`platform-lipl-dev`, `platform-lipl-stg`）での同期方法（既存の仕組みを流用できるか、手動作成が必要か）を確認
+4. ~~**harbor-registry pull secret**: 新規namespaceでの同期方法~~ → 解決済み。既存の `kigawa-system/secret-provider`（`kigawa-net-k8s` リポジトリ）の `harbor-sync-crn.yaml` / `bitwarden-sync-crn.yaml` の `TARGET_NAMESPACES` に `platform-lipl-dev` / `platform-lipl-stg` を追加した（[kigawa-net-k8s#195](https://github.com/kigawa-net/kigawa-net-k8s/pull/195)、マージ待ち）
 5. **PR単位のdev環境上書きによる競合**: 複数PRが並行している間、dev環境が最後のpushで上書きされる仕様でよいか（個別プレビュー環境が必要になった場合は別途ApplicationSet等での対応を検討）
