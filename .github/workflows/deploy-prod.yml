@@ -1,0 +1,63 @@
+name: Deploy (prod, manual promote from stg)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: lipl-deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  promote-manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get secrets from Bitwarden Secrets Manager
+        uses: bitwarden/sm-action@v3.0.1
+        with:
+          access_token: ${{ secrets.BWS_ACCESS_TOKEN }}
+          secrets: |
+            320f3982-890e-4865-8c15-b4b0005154aa > GH_APP_ID
+            97b6eba7-6bd2-418d-9d64-b48a007a097a > GH_APP_PRIVATE_KEY
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ env.GH_APP_ID }}
+          private-key: ${{ env.GH_APP_PRIVATE_KEY }}
+          owner: kigawa-net
+          repositories: platform
+
+      - name: Checkout platform repo
+        uses: actions/checkout@v7
+        with:
+          repository: kigawa-net/platform
+          token: ${{ steps.app-token.outputs.token }}
+          path: platform
+
+      - name: Promote current stg image tags to prod
+        working-directory: platform
+        run: |
+          set -euo pipefail
+          API_IMAGE=$(grep -oP '(?<=image: )\S+' lipl/stg/lipl-api.yaml)
+          FRONTEND_IMAGE=$(grep -oP '(?<=image: )\S+' lipl/stg/lipl-frontend.yaml)
+          echo "Promoting api: $API_IMAGE"
+          echo "Promoting frontend: $FRONTEND_IMAGE"
+          sed -i "s|image: harbor.kigawa.net/private/lipl-api:.*|image: $API_IMAGE|" lipl/main/lipl-api.yaml
+          sed -i "s|image: harbor.kigawa.net/private/lipl-frontend:.*|image: $FRONTEND_IMAGE|" lipl/main/lipl-frontend.yaml
+
+      - name: Commit and push
+        working-directory: platform
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lipl/main/lipl-api.yaml lipl/main/lipl-frontend.yaml
+          if git diff --cached --quiet; then
+            echo "no changes (prod already matches current stg)"
+            exit 0
+          fi
+          git commit -m "deploy: lipl prod (promote from stg) by ${{ github.actor }}"
+          git push
+
+# stgで既にテスト済みのイメージをそのままprodへコピーするだけで、再ビルドは行わない。
+# stgとprodで異なるバイナリが動く事態を避けるための設計。
