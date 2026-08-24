@@ -199,15 +199,15 @@ GitHub Actions（`lipl` リポジトリ）で2系統のワークフローを持�
 
 クラスタ内のSecret管理と同様、CI（GitHub Actions）側のSecretも生の値をGitHubに直接登録せず、Bitwarden Secrets Manager から [`bitwarden/sm-action`](https://github.com/bitwarden/sm-action) 経由で取得する。
 
-- `lipl` リポジトリに設定するGitHub Secretは **`BWS_ACCESS_TOKEN`（Bitwarden Machine Account のアクセストークン）1つのみ**
-- ワークフロー内で以下をBitwarden Secrets Managerから取得する（各ワークフローファイルの `<...-secret-id>` を実際のBitwarden Secret IDに置き換える）:
+- `lipl` リポジトリに設定するGitHub Secretは **`BWS_ACCESS_TOKEN`（Bitwarden Machine Account のアクセストークン）1つのみ**（未設定。要対応）
+- ワークフロー内で以下をBitwarden Secrets Managerから取得する:
 
-| 環境変数名 | 用途 |
-|-----------|------|
-| `HARBOR_USERNAME` / `HARBOR_PASSWORD` | `harbor.kigawa.net` への `docker login` |
-| `PLATFORM_REPO_TOKEN` | `kigawa-net/platform` への push 権限を持つ GitHub PAT（既定の `GITHUB_TOKEN` は他リポジトリへの書き込み権限を持たないため） |
+| 環境変数名 | 用途 | Bitwarden Secret | 状態 |
+|-----------|------|-------------------|------|
+| `HARBOR_USERNAME` / `HARBOR_PASSWORD` | `harbor.kigawa.net` への `docker login` | 既存の `harbor-user` / `harbor-pass`（`keruta` 等と共通） | 設定済み |
+| `PLATFORM_REPO_TOKEN` | `kigawa-net/platform` への push 権限を持つ GitHub PAT（既定の `GITHUB_TOKEN` は他リポジトリへの書き込み権限を持たないため） | 新規作成した `lipl-platform-repo-token`（値は仮のプレースホルダー） | **値の設定が未完了**。GitHubはAPI経由でのPAT発行を許可していないため、GitHub UI（Settings > Developer settings > Fine-grained personal access tokens）で `kigawa-net/platform` への `contents: write` 権限を持つPATを作成し、`bws secret edit cc3968a1-fa70-443a-82ae-b4b0004e3ca0 <実際のPAT>` で値を更新する必要がある |
 
-Bitwarden Secrets Manager側の Organization ID は既存インフラと共通（`a2b57f3d-6e2b-4467-b499-b31e00bfd804`、`kigawa-net-k8s` のCLAUDE.md参照）。上記3つのSecretを事前にBitwarden Secrets Manager上で作成し、そのSecret IDをワークフローファイルに反映すること。
+Bitwarden Secrets Manager側の Organization ID は既存インフラと共通（`a2b57f3d-6e2b-4467-b499-b31e00bfd804`、`kigawa-net-k8s` のCLAUDE.md参照）。Secret IDは各ワークフローファイル（`.github/workflows/deploy-dev.yml` / `deploy-stg.yml`）に既に反映済み。
 
 ## リソース見積もり（初期・個人開発規模）
 
