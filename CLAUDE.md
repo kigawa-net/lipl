@@ -24,8 +24,8 @@ issue 作成 → ブランチ作成 → 実装 → PR 作成 → レビュー �
 ```
 lipl/
 ├── docs/          # 要件・設計ドキュメント
-├── frontend/      # React + TypeScript フロントエンド（予定）
-└── backend/       # Kotlin + Ktor バックエンド（予定）
+├── frontend/      # React Router v8 + TypeScript フロントエンド
+└── backend/       # Kotlin + Ktor バックエンド
 ```
 
 ## フロントエンド規約
