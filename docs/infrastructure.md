@@ -12,10 +12,10 @@
 
 | 項目 | 既存の規約 |
 |------|-----------|
-| GitOpsリポジトリ | `platform`（`main` へのマージで自動デプロイ） |
-| マニフェスト配置 | app本体のリポジトリ（`lipl`）には k8s マニフェストは置かず、`platform` 側の `lipl/main/` に配置する |
-| ArgoCD Application | `apps/lipl-main-app.yml` を `platform` リポジトリに新設し、`platform` AppProject 配下に追加 |
-| Namespace命名 | `platform-lipl-main`（`kigawa-net-keruta-main` 等と同様） |
+| GitOpsリポジトリ | `platform` |
+| マニフェスト配置 | app本体のリポジトリ（`lipl`）には k8s マニフェストは置かず、`platform` 側に環境ごとのディレクトリ（`lipl/dev/`, `lipl/stg/`）を配置する（`keruta/dev/`, `keruta/stg/`, `keruta/main/` と同様に環境ごとに丸ごとディレクトリを複製する方式。kustomize等のoverlayは使わない） |
+| ArgoCD Application | `apps/lipl-dev-app.yml`, `apps/lipl-stg-app.yml` を `platform` リポジトリに新設し、`platform` AppProject 配下に追加 |
+| Namespace命名 | `platform-lipl-dev`, `platform-lipl-stg` |
 | Ingress Class | `haproxy`（nginx ではない） |
 | ベースドメイン | `kigawa.net`。個々のアプリは `<app>.kigawa.net` の1ラベルサブドメインを使用し、Ingress マニフェスト自体に TLS ブロックの記載はない（クラスタ側で `kigawa.net` 系サブドメインを一括カバーするデフォルト証明書が設定されていると推測される） |
 | コンテナレジストリ | `harbor.kigawa.net`（`private/<service>` パス。`imagePullSecrets: harbor-registry`） |
@@ -24,6 +24,22 @@
 | ストレージクラス | `rook-ceph-rbd`（DB等のブロックデバイス）、`rook-cephfs`（共有ファイルシステム） |
 | Secret管理 | 平文はgitに置かない。`k8s.bitwarden.com/v1 BitwardenSecret` CRD で Bitwarden Secrets Manager から同期する。新規namespaceは `kigawa-system/secret-provider/bitwarden-sync-crn.yaml` の `TARGET_NAMESPACES` に追記が必要（`bitwarden-sec` 認証トークンの同期用） |
 | 認証 | Keycloak（`user.kigawa.net`）。アプリによって専用realmと共有realm（`kigawa-net`）が混在。requirements.md の通りLiplは専用realm（`lipl`）を新設する方針で問題ない |
+
+## デプロイフロー（dev / stg）
+
+Lipl は2環境構成で運用する（現時点で本番専用の第3環境「main」は用意しない。将来的に必要になれば `keruta` と同様の3環境構成に拡張する）。
+
+| トリガー | 環境 | Namespace | ブランチ/イメージタグ |
+|---------|------|-----------|----------------------|
+| `lipl` リポジトリで PR を作成・更新 | **dev** | `platform-lipl-dev` | `develop-<commit-sha>`、`imagePullPolicy: Always` |
+| `lipl` リポジトリの `main` へマージ | **stg** | `platform-lipl-stg` | `main-<commit-sha>`、`imagePullPolicy: IfNotPresent` |
+
+- **dev環境はPRごとに独立させず、単一の共有環境**とする（PRイベントごとに同じ `platform-lipl-dev` namespaceへ上書きデプロイする。keruta の `dev/` 環境と同型）。複数PRが並行して開いている場合、最後にpushされたPRの内容がdev環境に反映される。PRごとの個別プレビュー環境（Namespace分離）が必要になった場合は別途検討する
+- **stg環境が実質的にLiplの唯一の稼働環境**（現時点で別途の本番環境はない）。`docs/requirements.md` に記載の実ドメイン（`lipl.kigawa.net`、`<slug>-lipl.kigawa.net`）はstg環境に割り当てる
+- dev環境は内部検証専用のため、実ドメインとは別のドメイン空間（`lipl-dev.kigawa.net`、`<slug>-lipl-dev.kigawa.net`）を使う（既存アプリの `<service>-dev.kigawa.net` 規則に準拠）
+- **外部サービスの認証情報はdev/stgで分離する**: Stripeはdev環境でテストモードのAPIキーを使う（本番決済情報を扱わない）。Keycloakのrealm/clientもdev/stgで分離する（`lipl-dev` client等）。Claude APIキーはコスト管理のため分離を推奨
+- dev/stg それぞれに専用の MariaDB（`mariadb-lipl-dev` / `mariadb-lipl-stg`）を用意する（データを共有しない）
+- オブジェクトストレージ（Cloudflare R2）はdev/stgでバケットまたはキープレフィックスを分離する（例: `lipl-photos-dev` / `lipl-photos`）
 
 **cert-manager は `platform` 内に存在しない。** 既存アプリはすべて `kigawa.net` サブドメインのみを使い、独自ドメイン機能を持たないため、cert-manager を使う必要がなかったと考えられる。**Lipl の独自ドメイン機能（Pro）はこのクラスタにとって新規の技術要素であり、cert-manager の導入が前提になる。**
 
@@ -40,20 +56,20 @@
 
 ## コンポーネント構成
 
-`platform` リポジトリの `lipl/main/` に以下を配置する。
+`platform` リポジトリに `lipl/dev/` と `lipl/stg/` を配置する（内容は同型。keruta の `keruta/dev/` / `keruta/stg/` と同様、環境ごとに丸ごと複製する）。
 
 ```
-lipl/main/
-├── ns.yaml                  # Namespace: platform-lipl-main
+lipl/stg/                     # lipl/dev/ も同型（namespace・ドメイン・イメージタグのみ異なる）
+├── ns.yaml                  # Namespace: platform-lipl-stg（devは platform-lipl-dev）
 ├── lipl-frontend.yaml        # Deployment + Service + BitwardenSecret
 ├── lipl-api.yaml              # Deployment + Service + BitwardenSecret
 ├── mariadb-lipl.yml          # MariaDB + Database + User + Grant (CRD)
-├── ingress.yaml              # Ingress（lipl.kigawa.net、<slug>-lipl.kigawa.net 用ワイルドカード）
-├── custom-domain-rbac.yaml   # lipl-api が動的にIngress/Certificateを作成するためのRBAC
-└── cert-manager-issuer.yaml  # ClusterIssuer（クラスタ未導入の場合のみ、新設が必要）
+├── ingress.yaml              # Ingress（lipl.kigawa.net、<slug>-lipl.kigawa.net 用。devは lipl-dev.kigawa.net 等）
+├── custom-domain-rbac.yaml   # lipl-api が動的にIngress/Certificateを作成するためのRBAC（stgのみ。独自ドメインはPro機能なのでdevでは省略可）
+└── cert-manager-issuer.yaml  # ClusterIssuer（クラスタ未導入の場合のみ、新設が必要。クラスタ共通のため1つで両環境から参照可）
 ```
 
-既存の `keruta/main/`（`ktse.yaml` + `ktcl-front.yaml` + `mariadb-ktse.yml` + `ingress.yaml`）と同型の構成。
+既存の `keruta/dev/` / `keruta/stg/`（各々に `ktse.yaml` + `ktcl-front.yaml` + `mariadb-ktse.yml` + `ingress.yaml` を複製）と同型の構成。
 
 ### lipl-frontend
 
@@ -67,11 +83,11 @@ lipl/main/
 - `DB_JDBC_URL=jdbc:mysql://mariadb-lipl:3306/lipl`（`mariadb-ktse` と同じパターン）
 - Keycloak JWT検証用の issuer/JWKS URL
 - Stripe / Claude API / オブジェクトストレージの認証情報は BitwardenSecret 経由で注入
-- カスタムドメイン機能のため、`platform-lipl-main` namespace内で `Ingress` と `Certificate`（cert-manager）を作成・削除できる RBAC を持つ ServiceAccount を使用する（下記「独自ドメイン」参照）
+- カスタムドメイン機能のため、`platform-lipl-stg` namespace内で `Ingress` と `Certificate`（cert-manager）を作成・削除できる RBAC を持つ ServiceAccount を使用する（下記「独自ドメイン」参照）
 
 ### mariadb-lipl
 
-`keruta/main/mariadb-ktse.yml` と同型：
+`keruta/stg/mariadb-ktse.yml` と同型（`name`, `size` 等はdev/stgで共通のテンプレートを想定。`mariadb-lipl` という名前自体はnamespaceで分離されるためdev/stgで同名でよい）：
 
 ```yaml
 apiVersion: k8s.mariadb.com/v1alpha1
@@ -106,6 +122,8 @@ spec:
 
 ### デフォルトドメイン（`<slug>-lipl.kigawa.net`、全プラン）
 
+以下は stg環境の例（dev環境は `lipl.kigawa.net` → `lipl-dev.kigawa.net`、`*.lipl.kigawa.net` → `*.lipl-dev.kigawa.net` に置き換える）:
+
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -132,7 +150,7 @@ spec:
 3. ユーザーが独自ドメインを登録すると、`lipl-api` が Kubernetes API 経由で以下を動的に作成する:
    - `Ingress`（該当ドメインをhostに持ち、`lipl-frontend` Serviceへ）
    - `Certificate`（cert-manager、上記Issuerを参照）
-4. `lipl-api` の ServiceAccount に `platform-lipl-main` namespace内での `ingresses`・`certificates.cert-manager.io` の作成/更新/削除権限を持つ `Role`/`RoleBinding` を付与する
+4. `lipl-api` の ServiceAccount に `platform-lipl-stg` namespace内での `ingresses`・`certificates.cert-manager.io` の作成/更新/削除権限を持つ `Role`/`RoleBinding` を付与する
 5. 証明書発行成功（`Certificate` の `Ready` 条件）を `lipl-api` がポーリングまたは Watch し、DBの「検証済み」フラグを更新する
 
 ## Secrets（Bitwarden）
@@ -145,9 +163,9 @@ spec:
 | `lipl-api` | `stripe-secret-key`, `stripe-webhook-secret`, `claude-api-key`, `keycloak-client-secret`, `r2-access-key-id`, `r2-secret-access-key` | 外部サービス連携（`r2-*` はCloudflare R2のS3互換APIトークン） |
 | `lipl-frontend` | `keycloak-client-secret`（OIDC confidential clientの場合） | フロントエンドのKeycloak連携 |
 
-実際の `bwSecretId`（Bitwarden側のUUID）は、Bitwarden Secrets Manager 上で事前に値を作成した上で取得する。ここでは値そのものは扱わない。
+上記はdev/stg各namespaceに同名で配置する（`platform-lipl-dev` と `platform-lipl-stg` それぞれに `mariadb-lipl`, `lipl-api`, `lipl-frontend` という名前のBitwardenSecretを作る。namespace分離により名前は衝突しない）。**`bwSecretId`（値）はdev/stgで別々のものを使う**（特にStripeはdevでテストモードキー、stgで本番キーを参照するように、Bitwarden Secrets Manager側で別々のシークレットとして管理する）。
 
-新規namespace `platform-lipl-main` を `kigawa-system/secret-provider/bitwarden-sync-crn.yaml` の `TARGET_NAMESPACES` に追加すること（`bitwarden-sec` 認証トークンが同期されないと `BitwardenSecret` オペレータが機能しない）。
+新規namespace `platform-lipl-dev`, `platform-lipl-stg` を `kigawa-system/secret-provider/bitwarden-sync-crn.yaml` の `TARGET_NAMESPACES` に追加すること（`bitwarden-sec` 認証トークンが同期されないと `BitwardenSecret` オペレータが機能しない）。
 
 ## オブジェクトストレージ
 
@@ -161,11 +179,25 @@ spec:
 
 ## CI/CD
 
-1. GitHub Actions（`lipl` リポジトリ）: push to `main` → Docker イメージビルド（frontend/backend）→ `harbor.kigawa.net/private/lipl-frontend:main-<sha>` / `lipl-api:main-<sha>` へ push
-2. 同ワークフロー、または後続ジョブが `platform` リポジトリの `lipl/main/lipl-frontend.yaml` / `lipl-api.yaml` の image タグを更新してコミット（他アプリのCIパターンを参考に実装。具体的な既存ワークフローは各アプリのソースリポジトリ側にあり、今回は未調査）
-3. ArgoCD が `platform` の変更を検知し自動sync
+GitHub Actions（`lipl` リポジトリ）で2系統のワークフローを持つ。
+
+### dev（PR作成・更新時）
+
+1. PRイベント（`opened`, `synchronize`）をトリガーに Docker イメージビルド（frontend/backend）→ `harbor.kigawa.net/private/lipl-frontend:develop-<sha>` / `lipl-api:develop-<sha>` へ push
+2. 後続ジョブが `platform` リポジトリの `lipl/dev/lipl-frontend.yaml` / `lipl-api.yaml` の image タグを更新してコミット
+3. ArgoCD が `platform` の変更を検知し `platform-lipl-dev` へ自動sync
+
+### stg（`main` へのマージ時）
+
+1. push to `main` をトリガーに Docker イメージビルド → `harbor.kigawa.net/private/lipl-frontend:main-<sha>` / `lipl-api:main-<sha>` へ push
+2. 後続ジョブが `platform` リポジトリの `lipl/stg/lipl-frontend.yaml` / `lipl-api.yaml` の image タグを更新してコミット
+3. ArgoCD が `platform` の変更を検知し `platform-lipl-stg` へ自動sync
+
+具体的な既存ワークフロー実装（イメージタグ更新〜コミットの方式）は各アプリのソースリポジトリ側にあり、今回は未調査。実装時に既存アプリ（keruta等）のワークフローを参考にする。
 
 ## リソース見積もり（初期・個人開発規模）
+
+dev/stgそれぞれに以下を配置する（合計は2倍）。
 
 | コンポーネント | replicas | CPU request/limit | Memory request/limit |
 |--------------|----------|-------------------|----------------------|
@@ -173,11 +205,12 @@ spec:
 | lipl-api | 1 | 100m / 500m | 256Mi / 512Mi |
 | mariadb-lipl | 1 | 100m / 500m | 256Mi / 512Mi |
 
-MVP規模ではHPA（自動スケール）は不要。将来的な需要増に応じて `replicas` を手動で増やす運用で十分。
+MVP規模ではHPA（自動スケール）は不要。dev環境は検証専用のため、replicasを1未満（スケールダウン）にして常時稼働させない運用も検討可（keruta同様、使用状況次第でreplicas: 0にする選択肢もある）。将来的な需要増に応じて `replicas` を手動で増やす運用で十分。
 
 ## 未確定・要確認事項（実装着手前に解決すべき）
 
-1. **DNS**: `*.kigawa.net` ワイルドカードが実際に既存かどうかの確認（kinfra/infra リポジトリまたはDNSプロバイダ側の設定を確認）
-2. **HAProxy Ingressのフォールバックルーティング**: `<slug>-lipl.kigawa.net` の動的な多数ホストを1つのIngressでどう受けるか（ワイルドカードhost指定が可能か、あるいはdefault-backend方式にするか）の技術検証
+1. **DNS**: `*.kigawa.net` ワイルドカードが実際に既存かどうかの確認（kinfra/infra リポジトリまたはDNSプロバイダ側の設定を確認）。同様に `*-dev.kigawa.net` 相当（dev環境用）が既存アプリの `<service>-dev.kigawa.net` で使われている解決方式も確認する
+2. **HAProxy Ingressのフォールバックルーティング**: `<slug>-lipl.kigawa.net`（stg）・`<slug>-lipl-dev.kigawa.net`（dev）の動的な多数ホストを1つのIngressでどう受けるか（ワイルドカードhost指定が可能か、あるいはdefault-backend方式にするか）の技術検証
 3. **cert-manager導入**: このクラスタに未導入。独自ドメイン機能の実装前に導入が必要（管理範囲がkinfra/infra側かplatform側か要確認）
-4. **harbor-registry pull secret**: 新規namespaceでの同期方法（既存の仕組みを流用できるか、手動作成が必要か）を確認
+4. **harbor-registry pull secret**: 新規namespace（`platform-lipl-dev`, `platform-lipl-stg`）での同期方法（既存の仕組みを流用できるか、手動作成が必要か）を確認
+5. **PR単位のdev環境上書きによる競合**: 複数PRが並行している間、dev環境が最後のpushで上書きされる仕様でよいか（個別プレビュー環境が必要になった場合は別途ApplicationSet等での対応を検討）
