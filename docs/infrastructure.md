@@ -193,7 +193,14 @@ GitHub Actions（`lipl` リポジトリ）で2系統のワークフローを持�
 2. 後続ジョブが `platform` リポジトリの `lipl/stg/lipl-frontend.yaml` / `lipl-api.yaml` の image タグを更新してコミット
 3. ArgoCD が `platform` の変更を検知し `platform-lipl-stg` へ自動sync
 
-具体的な既存ワークフロー実装（イメージタグ更新〜コミットの方式）は各アプリのソースリポジトリ側にあり、今回は未調査。実装時に既存アプリ（keruta等）のワークフローを参考にする。
+実装は `.github/workflows/deploy-dev.yml`（PR時）/ `deploy-stg.yml`（`main`マージ時）。各ワークフローは以下の順で実行する: バックエンド（`./gradlew build`）・フロントエンド（`npm run lint && typecheck && build`）のテスト → 両方成功した場合のみ Docker イメージビルド・push → `platform` リポジトリのマニフェスト更新・コミット・push。
+
+### 必要なリポジトリSecret（`lipl` リポジトリに設定が必要）
+
+| Secret名 | 用途 |
+|----------|------|
+| `HARBOR_USERNAME` / `HARBOR_PASSWORD` | `harbor.kigawa.net` への `docker login` |
+| `PLATFORM_REPO_TOKEN` | `kigawa-net/platform` への push 権限を持つ GitHub PAT（既定の `GITHUB_TOKEN` は他リポジトリへの書き込み権限を持たないため） |
 
 ## リソース見積もり（初期・個人開発規模）
 
