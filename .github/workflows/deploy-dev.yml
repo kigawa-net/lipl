@@ -52,11 +52,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Get secrets from Bitwarden Secrets Manager
+        uses: bitwarden/sm-action@v3
+        with:
+          access_token: ${{ secrets.BWS_ACCESS_TOKEN }}
+          secrets: |
+            <harbor-username-secret-id> > HARBOR_USERNAME
+            <harbor-password-secret-id> > HARBOR_PASSWORD
+
       - uses: docker/login-action@v3
         with:
           registry: harbor.kigawa.net
-          username: ${{ secrets.HARBOR_USERNAME }}
-          password: ${{ secrets.HARBOR_PASSWORD }}
+          username: ${{ env.HARBOR_USERNAME }}
+          password: ${{ env.HARBOR_PASSWORD }}
 
       - uses: docker/build-push-action@v6
         with:
@@ -68,11 +76,18 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Get secrets from Bitwarden Secrets Manager
+        uses: bitwarden/sm-action@v3
+        with:
+          access_token: ${{ secrets.BWS_ACCESS_TOKEN }}
+          secrets: |
+            <platform-repo-token-secret-id> > PLATFORM_REPO_TOKEN
+
       - name: Checkout platform repo
         uses: actions/checkout@v4
         with:
           repository: kigawa-net/platform
-          token: ${{ secrets.PLATFORM_REPO_TOKEN }}
+          token: ${{ env.PLATFORM_REPO_TOKEN }}
           path: platform
 
       - name: Update image tags for dev

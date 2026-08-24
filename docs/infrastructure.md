@@ -195,12 +195,19 @@ GitHub Actions（`lipl` リポジトリ）で2系統のワークフローを持�
 
 実装は `.github/workflows/deploy-dev.yml`（PR時）/ `deploy-stg.yml`（`main`マージ時）。各ワークフローは以下の順で実行する: バックエンド（`./gradlew build`）・フロントエンド（`npm run lint && typecheck && build`）のテスト → 両方成功した場合のみ Docker イメージビルド・push → `platform` リポジトリのマニフェスト更新・コミット・push。
 
-### 必要なリポジトリSecret（`lipl` リポジトリに設定が必要）
+### Secret管理（Bitwarden Secrets Manager）
 
-| Secret名 | 用途 |
-|----------|------|
+クラスタ内のSecret管理と同様、CI（GitHub Actions）側のSecretも生の値をGitHubに直接登録せず、Bitwarden Secrets Manager から [`bitwarden/sm-action`](https://github.com/bitwarden/sm-action) 経由で取得する。
+
+- `lipl` リポジトリに設定するGitHub Secretは **`BWS_ACCESS_TOKEN`（Bitwarden Machine Account のアクセストークン）1つのみ**
+- ワークフロー内で以下をBitwarden Secrets Managerから取得する（各ワークフローファイルの `<...-secret-id>` を実際のBitwarden Secret IDに置き換える）:
+
+| 環境変数名 | 用途 |
+|-----------|------|
 | `HARBOR_USERNAME` / `HARBOR_PASSWORD` | `harbor.kigawa.net` への `docker login` |
 | `PLATFORM_REPO_TOKEN` | `kigawa-net/platform` への push 権限を持つ GitHub PAT（既定の `GITHUB_TOKEN` は他リポジトリへの書き込み権限を持たないため） |
+
+Bitwarden Secrets Manager側の Organization ID は既存インフラと共通（`a2b57f3d-6e2b-4467-b499-b31e00bfd804`、`kigawa-net-k8s` のCLAUDE.md参照）。上記3つのSecretを事前にBitwarden Secrets Manager上で作成し、そのSecret IDをワークフローファイルに反映すること。
 
 ## リソース見積もり（初期・個人開発規模）
 
