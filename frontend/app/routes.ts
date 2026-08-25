@@ -7,4 +7,5 @@ export default [
   route("callback", "routes/callback.tsx"),
   route("logout", "routes/logout.tsx"),
   route("dashboard", "routes/dashboard.tsx"),
+  route("stores/:storeId", "routes/store-detail.tsx"),
 ] satisfies RouteConfig;

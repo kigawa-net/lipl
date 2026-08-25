@@ -141,6 +141,9 @@ export default function Dashboard() {
               {BUSINESS_CATEGORY_LABELS[store.businessCategory]} /{" "}
               {OPERATION_TYPE_LABELS[store.operationType]}
             </span>
+            <a href={`/stores/${store.id}`} className="ml-2 text-sm text-blue-600 underline">
+              メニュー管理
+            </a>
           </li>
         ))}
         {stores.length === 0 && <li className="text-gray-500">まだ店舗がありません</li>}
