@@ -49,6 +49,13 @@ class StoreRepository {
             .map { toResponse(it) }
     }
 
+    fun isOwnedBy(storeId: Long, ownerSub: String): Boolean = transaction {
+        StoresTable.selectAll()
+            .andWhere { StoresTable.id eq storeId }
+            .andWhere { StoresTable.ownerSub eq ownerSub }
+            .any()
+    }
+
     private fun generateUniqueSlug(): String {
         repeat(10) {
             val candidate = generateSlug()

@@ -19,6 +19,8 @@ import net.kigawa.lipl.db.createDataSource
 import net.kigawa.lipl.db.dbConfigFromEnv
 import net.kigawa.lipl.db.migrate
 import net.kigawa.lipl.health.healthRoutes
+import net.kigawa.lipl.menu.MenuItemRepository
+import net.kigawa.lipl.menu.menuItemRoutes
 import net.kigawa.lipl.store.StoreRepository
 import net.kigawa.lipl.store.storeRoutes
 import org.slf4j.LoggerFactory
@@ -31,10 +33,15 @@ fun main() {
     migrate(dataSource)
     connectDatabase(dataSource)
     val storeRepository = StoreRepository()
+    val menuItemRepository = MenuItemRepository()
     val keycloakConfig = keycloakConfigFromEnv()
 
     embeddedServer(Netty, port = port) {
-        module(storeRepository = storeRepository, keycloakConfig = keycloakConfig)
+        module(
+            storeRepository = storeRepository,
+            menuItemRepository = menuItemRepository,
+            keycloakConfig = keycloakConfig,
+        )
     }.start(wait = true)
 }
 
@@ -42,6 +49,7 @@ private val logger = LoggerFactory.getLogger("net.kigawa.lipl.Application")
 
 fun Application.module(
     storeRepository: StoreRepository? = null,
+    menuItemRepository: MenuItemRepository? = null,
     keycloakConfig: KeycloakConfig? = null,
 ) {
     install(ContentNegotiation) {
@@ -66,5 +74,8 @@ fun Application.module(
     }
     if (storeRepository != null) {
         routing { storeRoutes(storeRepository) }
+    }
+    if (storeRepository != null && menuItemRepository != null) {
+        routing { menuItemRoutes(storeRepository, menuItemRepository) }
     }
 }
