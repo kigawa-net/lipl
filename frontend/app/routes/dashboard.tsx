@@ -5,9 +5,22 @@ import {
   listStores,
   type BusinessCategory,
   type OperationType,
+  type SnsLinkInput,
+  type SnsPlatform,
   type StoreResponse,
 } from "~/lib/api";
 import { isAuthenticated } from "~/lib/oidc";
+
+const SNS_PLATFORM_LABELS: Record<SnsPlatform, string> = {
+  INSTAGRAM: "Instagram",
+  X: "X",
+  FACEBOOK: "Facebook",
+  LINE: "LINE",
+  TIKTOK: "TikTok",
+  YOUTUBE: "YouTube",
+};
+
+const SNS_PLATFORMS = Object.keys(SNS_PLATFORM_LABELS) as SnsPlatform[];
 
 const BUSINESS_CATEGORY_LABELS: Record<BusinessCategory, string> = {
   CAFE: "カフェ",
@@ -41,6 +54,16 @@ export default function Dashboard() {
   const [operationType, setOperationType] = useState<OperationType>("FIXED");
   const [address, setAddress] = useState("");
   const [businessArea, setBusinessArea] = useState("");
+  const [businessHours, setBusinessHours] = useState("");
+  const [phone, setPhone] = useState("");
+  const [snsUrls, setSnsUrls] = useState<Record<SnsPlatform, string>>({
+    INSTAGRAM: "",
+    X: "",
+    FACEBOOK: "",
+    LINE: "",
+    TIKTOK: "",
+    YOUTUBE: "",
+  });
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -63,18 +86,27 @@ export default function Dashboard() {
     setSubmitting(true);
     setError(null);
     try {
+      const snsLinks: SnsLinkInput[] = SNS_PLATFORMS.filter((platform) => snsUrls[platform].trim() !== "").map(
+        (platform) => ({ platform, url: snsUrls[platform].trim() }),
+      );
+
       const store = await createStore({
         name,
         businessCategory,
         operationType,
         address: operationType === "FIXED" ? address : undefined,
         businessArea: operationType === "MOBILE" ? businessArea : undefined,
-        snsLinks: [],
+        businessHours: businessHours || undefined,
+        phone: phone || undefined,
+        snsLinks,
       });
       setStores((prev) => [...prev, store]);
       setName("");
       setAddress("");
       setBusinessArea("");
+      setBusinessHours("");
+      setPhone("");
+      setSnsUrls({ INSTAGRAM: "", X: "", FACEBOOK: "", LINE: "", TIKTOK: "", YOUTUBE: "" });
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -180,6 +212,50 @@ export default function Dashboard() {
             />
           </div>
         )}
+
+        <div>
+          <label className="mb-1 block text-sm font-medium">営業時間</label>
+          <input
+            maxLength={200}
+            value={businessHours}
+            onChange={(e) => setBusinessHours(e.target.value)}
+            placeholder="例: 平日11:00-22:00 / 土日祝10:00-22:00"
+            className="w-full rounded border p-2"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium">電話番号</label>
+          <input
+            maxLength={20}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="w-full rounded border p-2"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium">SNSリンク</label>
+          <div className="space-y-2">
+            {SNS_PLATFORMS.map((platform) => (
+              <div key={platform} className="flex items-center gap-2">
+                <span className="w-24 shrink-0 text-sm text-gray-600">
+                  {SNS_PLATFORM_LABELS[platform]}
+                </span>
+                <input
+                  type="url"
+                  maxLength={500}
+                  value={snsUrls[platform]}
+                  onChange={(e) =>
+                    setSnsUrls((prev) => ({ ...prev, [platform]: e.target.value }))
+                  }
+                  placeholder="https://..."
+                  className="w-full rounded border p-2"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
 
         <button
           type="submit"
