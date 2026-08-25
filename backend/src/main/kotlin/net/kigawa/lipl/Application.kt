@@ -10,18 +10,40 @@ import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respondText
+import io.ktor.server.routing.routing
+import net.kigawa.lipl.auth.KeycloakConfig
+import net.kigawa.lipl.auth.configureKeycloakAuth
+import net.kigawa.lipl.auth.keycloakConfigFromEnv
+import net.kigawa.lipl.db.connectDatabase
+import net.kigawa.lipl.db.createDataSource
+import net.kigawa.lipl.db.dbConfigFromEnv
+import net.kigawa.lipl.db.migrate
 import net.kigawa.lipl.health.healthRoutes
+import net.kigawa.lipl.store.StoreRepository
+import net.kigawa.lipl.store.storeRoutes
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 
 fun main() {
     val port = System.getenv("PORT")?.toIntOrNull() ?: 8080
-    embeddedServer(Netty, port = port, module = Application::module).start(wait = true)
+
+    val dataSource = createDataSource(dbConfigFromEnv())
+    migrate(dataSource)
+    connectDatabase(dataSource)
+    val storeRepository = StoreRepository()
+    val keycloakConfig = keycloakConfigFromEnv()
+
+    embeddedServer(Netty, port = port) {
+        module(storeRepository = storeRepository, keycloakConfig = keycloakConfig)
+    }.start(wait = true)
 }
 
 private val logger = LoggerFactory.getLogger("net.kigawa.lipl.Application")
 
-fun Application.module() {
+fun Application.module(
+    storeRepository: StoreRepository? = null,
+    keycloakConfig: KeycloakConfig? = null,
+) {
     install(ContentNegotiation) {
         json()
     }
@@ -38,4 +60,11 @@ fun Application.module() {
     }
 
     healthRoutes()
+
+    if (keycloakConfig != null) {
+        configureKeycloakAuth(keycloakConfig)
+    }
+    if (storeRepository != null) {
+        routing { storeRoutes(storeRepository) }
+    }
 }
