@@ -13,8 +13,8 @@ HTML、CSS、サーバー、ドメイン、DNSの知識がなくても、店舗�
 |----------|------|
 | [docs/requirements.md](docs/requirements.md) | 要件定義（MVP・画面・料金・技術スタック） |
 | [docs/ai-app-proposal.md](docs/ai-app-proposal.md) | 生成AIアプリ企画案（あいちセレクトAIコンテスト提出用） |
-| [docs/work-summary.md](docs/work-summary.md) | 作品概要書（あいちセレクトAIコンテスト提出用） |
-| [docs/pitch-video-slides.md](docs/pitch-video-slides.md) | ピッチ動画スライド構成（1分・全7枚のタイムコード付き構成） |
+| [docs/work-summary.md](docs/work-summary.md) ／ [PDF](docs/work-summary.pdf) | 作品概要書（あいちセレクトAIコンテスト提出用） |
+| [docs/pitch-video-slides.md](docs/pitch-video-slides.md) ／ [PDF](docs/pitch-video-slides.pdf) | ピッチ動画スライド構成（1分・全7枚のタイムコード付き構成） |
 | [CLAUDE.md](CLAUDE.md) | 開発規約（ブランチ・コミット・コーディング規約） |
 
 ## コンセプト
