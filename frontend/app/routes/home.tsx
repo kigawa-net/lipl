@@ -12,8 +12,8 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 text-center">
-      <h1 className="text-3xl font-bold">Lipl</h1>
+    <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-gradient-to-b from-amber-50 to-white p-8 text-center">
+      <h1 className="text-3xl font-bold text-amber-900">Lipl</h1>
       <p className="text-lg text-gray-600">
         お店の情報を入力するだけ。
         <br />
@@ -21,7 +21,7 @@ export default function Home() {
       </p>
       <a
         href="/dashboard"
-        className="rounded bg-black px-6 py-3 text-white"
+        className="rounded bg-amber-900 px-6 py-3 text-white transition-colors hover:bg-amber-800"
       >
         はじめる
       </a>
