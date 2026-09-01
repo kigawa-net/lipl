@@ -36,6 +36,10 @@ dependencies {
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.10")
     implementation("com.zaxxer:HikariCP:7.1.0")
     implementation("com.auth0:jwks-rsa:0.24.1")
+    implementation("com.auth0:java-jwt:4.6.0")
+    implementation("io.ktor:ktor-client-core")
+    implementation("io.ktor:ktor-client-cio")
+    implementation("io.ktor:ktor-client-content-negotiation")
 
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation(kotlin("test"))
