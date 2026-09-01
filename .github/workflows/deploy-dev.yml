@@ -70,7 +70,7 @@ jobs:
         with:
           context: ./${{ matrix.context }}
           push: true
-          tags: harbor.kigawa.net/private/${{ matrix.image }}:develop-${{ github.sha }}
+          tags: harbor.kigawa.net/private/${{ matrix.image }}:develop-${{ github.event.pull_request.head.sha }}
 
 # platformリポジトリへのマニフェスト更新は不要。
 # ArgoCD ApplicationSet（platform: apps/lipl-dev-appset.yml）のPull Request Generatorが
