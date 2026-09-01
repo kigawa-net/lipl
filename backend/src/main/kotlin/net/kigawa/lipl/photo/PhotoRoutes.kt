@@ -12,9 +12,13 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
+import kotlinx.serialization.Serializable
 import net.kigawa.lipl.auth.ownerSub
 import net.kigawa.lipl.kaft.KaftClient
 import net.kigawa.lipl.store.StoreRepository
+
+@Serializable
+data class KaftConfigResponse(val kaftBaseUrl: String)
 
 fun Route.photoRoutes(
     storeRepository: StoreRepository,
@@ -22,6 +26,12 @@ fun Route.photoRoutes(
     kaftClient: KaftClient,
     kaftBaseUrl: String,
 ) {
+    // 写真表示URLの組み立てにフロントエンドが必要とする公開kaftベースURL。
+    // 値自体は機密情報ではないため未認証で公開する。
+    get("/api/kaft-config") {
+        call.respond(KaftConfigResponse(kaftBaseUrl))
+    }
+
     authenticate("keycloak") {
         route("/api/stores/{storeId}/photos") {
             get {
