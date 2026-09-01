@@ -12,13 +12,19 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 text-center">
       <h1 className="text-3xl font-bold">Lipl</h1>
       <p className="text-lg text-gray-600">
         お店の情報を入力するだけ。
         <br />
         3分で公式ページを公開。
       </p>
+      <a
+        href="/dashboard"
+        className="rounded bg-black px-6 py-3 text-white"
+      >
+        はじめる
+      </a>
     </main>
   );
 }
