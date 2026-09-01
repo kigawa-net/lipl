@@ -19,8 +19,13 @@ import net.kigawa.lipl.db.createDataSource
 import net.kigawa.lipl.db.dbConfigFromEnv
 import net.kigawa.lipl.db.migrate
 import net.kigawa.lipl.health.healthRoutes
+import net.kigawa.lipl.kaft.KaftClient
+import net.kigawa.lipl.kaft.KaftConfig
+import net.kigawa.lipl.kaft.kaftConfigFromEnv
 import net.kigawa.lipl.menu.MenuItemRepository
 import net.kigawa.lipl.menu.menuItemRoutes
+import net.kigawa.lipl.photo.PhotoRepository
+import net.kigawa.lipl.photo.photoRoutes
 import net.kigawa.lipl.store.StoreRepository
 import net.kigawa.lipl.store.storeRoutes
 import org.slf4j.LoggerFactory
@@ -34,13 +39,19 @@ fun main() {
     connectDatabase(dataSource)
     val storeRepository = StoreRepository()
     val menuItemRepository = MenuItemRepository()
+    val photoRepository = PhotoRepository()
     val keycloakConfig = keycloakConfigFromEnv()
+    val kaftConfig = kaftConfigFromEnv()
+    val kaftClient = KaftClient(kaftConfig)
 
     embeddedServer(Netty, port = port) {
         module(
             storeRepository = storeRepository,
             menuItemRepository = menuItemRepository,
+            photoRepository = photoRepository,
             keycloakConfig = keycloakConfig,
+            kaftClient = kaftClient,
+            kaftConfig = kaftConfig,
         )
     }.start(wait = true)
 }
@@ -50,7 +61,10 @@ private val logger = LoggerFactory.getLogger("net.kigawa.lipl.Application")
 fun Application.module(
     storeRepository: StoreRepository? = null,
     menuItemRepository: MenuItemRepository? = null,
+    photoRepository: PhotoRepository? = null,
     keycloakConfig: KeycloakConfig? = null,
+    kaftClient: KaftClient? = null,
+    kaftConfig: KaftConfig? = null,
 ) {
     install(ContentNegotiation) {
         json()
@@ -77,5 +91,8 @@ fun Application.module(
     }
     if (storeRepository != null && menuItemRepository != null) {
         routing { menuItemRoutes(storeRepository, menuItemRepository) }
+    }
+    if (storeRepository != null && photoRepository != null && kaftClient != null && kaftConfig != null) {
+        routing { photoRoutes(storeRepository, photoRepository, kaftClient, kaftConfig.publicBaseUrl) }
     }
 }
