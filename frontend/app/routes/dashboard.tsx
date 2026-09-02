@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { listStores, type StoreResponse } from "~/lib/api";
+import { deleteStore, listStores, type StoreResponse } from "~/lib/api";
 import { BUSINESS_CATEGORY_LABELS, OPERATION_TYPE_LABELS } from "~/lib/labels";
 import { isAuthenticated } from "~/lib/oidc";
 
@@ -9,6 +9,7 @@ export default function Dashboard() {
   const [stores, setStores] = useState<StoreResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -20,6 +21,22 @@ export default function Dashboard() {
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, [navigate]);
+
+  async function handleDelete(store: StoreResponse) {
+    if (!window.confirm(`「${store.name}」を削除します。メニューや写真もすべて削除され、元に戻せません。よろしいですか？`)) {
+      return;
+    }
+    setDeletingId(store.id);
+    setError(null);
+    try {
+      await deleteStore(store.id);
+      setStores((prev) => prev.filter((s) => s.id !== store.id));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   if (loading) {
     return (
@@ -73,6 +90,14 @@ export default function Dashboard() {
                   公開ページを見る
                 </a>
               )}
+              <button
+                type="button"
+                onClick={() => handleDelete(store)}
+                disabled={deletingId === store.id}
+                className="text-red-600 underline hover:text-red-700 disabled:opacity-50"
+              >
+                {deletingId === store.id ? "削除中..." : "削除する"}
+              </button>
             </div>
           </li>
         ))}

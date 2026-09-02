@@ -3,6 +3,7 @@ package net.kigawa.lipl.store
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.andWhere
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -66,6 +67,16 @@ class StoreRepository {
         }
         if (updated == 0) throw StoreNotFoundException()
         toResponse(storeId)
+    }
+
+    // メニュー・写真はそれぞれのRepositoryが呼び出し側（Route層）で先に削除する前提。
+    // ここではSNSリンクと店舗本体のみ削除する。
+    fun delete(storeId: Long) = transaction {
+        val exists = StoresTable.selectAll().andWhere { StoresTable.id eq storeId }.any()
+        if (!exists) throw StoreNotFoundException()
+
+        StoreSnsLinksTable.deleteWhere { StoreSnsLinksTable.storeId eq storeId }
+        StoresTable.deleteWhere { StoresTable.id eq storeId }
     }
 
     fun findPublishedBySlug(slug: String): StoreResponse? = transaction {

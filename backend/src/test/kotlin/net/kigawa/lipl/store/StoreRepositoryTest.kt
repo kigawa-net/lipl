@@ -2,6 +2,8 @@ package net.kigawa.lipl.store
 
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.andWhere
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -139,6 +141,32 @@ class StoreRepositoryTest {
     fun `setPublished on unknown store throws`() {
         assertFailsWith<StoreNotFoundException> {
             repository.setPublished(999L, true)
+        }
+    }
+
+    @Test
+    fun `delete removes the store and its sns links`() {
+        val request = CreateStoreRequest(
+            name = "店舗",
+            businessCategory = BusinessCategory.CAFE,
+            address = "住所",
+            snsLinks = listOf(SnsLinkInput(SnsPlatform.INSTAGRAM, "https://instagram.com/test")),
+        )
+        val created = repository.create("owner-1", request)
+
+        repository.delete(created.id)
+
+        assertEquals(emptyList(), repository.listByOwner("owner-1"))
+        val remainingLinks = transaction {
+            StoreSnsLinksTable.selectAll().andWhere { StoreSnsLinksTable.storeId eq created.id }.count()
+        }
+        assertEquals(0, remainingLinks)
+    }
+
+    @Test
+    fun `delete on unknown store throws`() {
+        assertFailsWith<StoreNotFoundException> {
+            repository.delete(999L)
         }
     }
 }
