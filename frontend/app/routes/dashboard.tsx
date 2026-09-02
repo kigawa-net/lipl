@@ -150,101 +150,149 @@ export default function Dashboard() {
       </ul>
 
       <h2 className="mb-4 text-xl font-bold">店舗を作成</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="mb-1 block text-sm font-medium">店名</label>
-          <input
-            required
-            maxLength={50}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full rounded border p-2"
-          />
-        </div>
+      <form onSubmit={handleSubmit} className="form-card">
+        <div className="form-section">
+          <p className="form-section-title">基本情報</p>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium">業種</label>
-          <select
-            value={businessCategory}
-            onChange={(e) => handleCategoryChange(e.target.value as BusinessCategory)}
-            className="w-full rounded border p-2"
-          >
-            {Object.entries(BUSINESS_CATEGORY_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="space-y-5">
+            <div className="field">
+              <label className="field-label">
+                <span>店名</span>
+                <span className="flex items-center gap-2">
+                  <span className="field-tag-required">必須</span>
+                  <span className="field-count">{name.length}/50</span>
+                </span>
+              </label>
+              <input
+                required
+                maxLength={50}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="例: 喫茶ひだまり"
+                className="field-input"
+              />
+            </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium">業態区分</label>
-          <select
-            value={operationType}
-            onChange={(e) => setOperationType(e.target.value as OperationType)}
-            className="w-full rounded border p-2"
-          >
-            {Object.entries(OPERATION_TYPE_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {operationType === "FIXED" ? (
-          <div>
-            <label className="mb-1 block text-sm font-medium">所在地（住所）</label>
-            <input
-              required
-              maxLength={200}
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full rounded border p-2"
-            />
+            <div className="field">
+              <label className="field-label">業種</label>
+              <div className="field-select-wrap">
+                <select
+                  value={businessCategory}
+                  onChange={(e) => handleCategoryChange(e.target.value as BusinessCategory)}
+                  className="field-select"
+                >
+                  {Object.entries(BUSINESS_CATEGORY_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <svg className="field-select-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
           </div>
-        ) : (
-          <div>
-            <label className="mb-1 block text-sm font-medium">出店エリア</label>
-            <input
-              required
-              maxLength={200}
-              value={businessArea}
-              onChange={(e) => setBusinessArea(e.target.value)}
-              className="w-full rounded border p-2"
-            />
+        </div>
+
+        <div className="form-section">
+          <p className="form-section-title">営業形態</p>
+
+          <div className="space-y-5">
+            <div className="field">
+              <label className="field-label">業態区分</label>
+              <div className="field-select-wrap">
+                <select
+                  value={operationType}
+                  onChange={(e) => setOperationType(e.target.value as OperationType)}
+                  className="field-select"
+                >
+                  {Object.entries(OPERATION_TYPE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <svg className="field-select-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+
+            {operationType === "FIXED" ? (
+              <div className="field">
+                <label className="field-label">
+                  <span>所在地（住所）</span>
+                  <span className="flex items-center gap-2">
+                    <span className="field-tag-required">必須</span>
+                    <span className="field-count">{address.length}/200</span>
+                  </span>
+                </label>
+                <input
+                  required
+                  maxLength={200}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="例: 東京都渋谷区〇〇1-2-3"
+                  className="field-input"
+                />
+              </div>
+            ) : (
+              <div className="field">
+                <label className="field-label">
+                  <span>出店エリア</span>
+                  <span className="flex items-center gap-2">
+                    <span className="field-tag-required">必須</span>
+                    <span className="field-count">{businessArea.length}/200</span>
+                  </span>
+                </label>
+                <input
+                  required
+                  maxLength={200}
+                  value={businessArea}
+                  onChange={(e) => setBusinessArea(e.target.value)}
+                  placeholder="例: 都内近郊のマルシェ・イベント中心"
+                  className="field-input"
+                />
+              </div>
+            )}
+
+            <div className="field">
+              <label className="field-label">
+                <span>営業時間</span>
+                <span className="field-tag">任意</span>
+              </label>
+              <input
+                maxLength={200}
+                value={businessHours}
+                onChange={(e) => setBusinessHours(e.target.value)}
+                placeholder="例: 平日11:00-22:00 / 土日祝10:00-22:00"
+                className="field-input"
+              />
+            </div>
+
+            <div className="field">
+              <label className="field-label">
+                <span>電話番号</span>
+                <span className="field-tag">任意</span>
+              </label>
+              <input
+                maxLength={20}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="例: 03-1234-5678"
+                className="field-input"
+              />
+            </div>
           </div>
-        )}
-
-        <div>
-          <label className="mb-1 block text-sm font-medium">営業時間</label>
-          <input
-            maxLength={200}
-            value={businessHours}
-            onChange={(e) => setBusinessHours(e.target.value)}
-            placeholder="例: 平日11:00-22:00 / 土日祝10:00-22:00"
-            className="w-full rounded border p-2"
-          />
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium">電話番号</label>
-          <input
-            maxLength={20}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full rounded border p-2"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium">SNSリンク</label>
+        <div className="form-section">
+          <p className="form-section-title">SNSリンク</p>
           <div className="space-y-2">
             {SNS_PLATFORMS.map((platform) => (
-              <div key={platform} className="flex items-center gap-2">
-                <span className="w-24 shrink-0 text-sm text-gray-600">
-                  {SNS_PLATFORM_LABELS[platform]}
-                </span>
+              <label key={platform} className="sns-row">
+                <span className="sns-badge">{SNS_PLATFORM_LABELS[platform]}</span>
                 <input
                   type="url"
                   maxLength={500}
@@ -253,9 +301,9 @@ export default function Dashboard() {
                     setSnsUrls((prev) => ({ ...prev, [platform]: e.target.value }))
                   }
                   placeholder="https://..."
-                  className="w-full rounded border p-2"
+                  className="sns-input"
                 />
-              </div>
+              </label>
             ))}
           </div>
         </div>
@@ -263,7 +311,7 @@ export default function Dashboard() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded bg-amber-900 px-4 py-2 text-white transition-colors hover:bg-amber-800 disabled:opacity-50"
+          className="mt-7 w-full rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 sm:w-auto sm:px-6"
         >
           {submitting ? "作成中..." : "作成する"}
         </button>
