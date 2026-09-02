@@ -1,4 +1,4 @@
-import { getAccessToken } from "~/lib/oidc";
+import { getAccessToken, refreshAccessToken } from "~/lib/oidc";
 
 export type BusinessCategory =
   | "CAFE"
@@ -43,11 +43,7 @@ export interface StoreResponse {
   snsLinks: SnsLinkInput[];
 }
 
-async function authorizedFetch(path: string, init?: RequestInit): Promise<Response> {
-  const token = getAccessToken();
-  if (!token) {
-    throw new Error("ログインが必要です");
-  }
+function fetchWithToken(path: string, token: string, init?: RequestInit): Promise<Response> {
   return fetch(`/api${path}`, {
     ...init,
     headers: {
@@ -55,6 +51,30 @@ async function authorizedFetch(path: string, init?: RequestInit): Promise<Respon
       Authorization: `Bearer ${token}`,
     },
   });
+}
+
+// Keycloakのaccess tokenは短命（5分）なため、401が返ってきた場合は
+// refresh tokenで再取得して一度だけリトライする。再ログインが必要な場合は
+// トークンを破棄してログイン画面へ遷移する。
+async function authorizedFetch(path: string, init?: RequestInit): Promise<Response> {
+  const token = getAccessToken();
+  if (!token) {
+    window.location.assign("/login");
+    throw new Error("ログインが必要です");
+  }
+
+  const response = await fetchWithToken(path, token, init);
+  if (response.status !== 401) {
+    return response;
+  }
+
+  const refreshed = await refreshAccessToken();
+  if (!refreshed) {
+    window.location.assign("/login");
+    throw new Error("セッションの有効期限が切れました。再度ログインしてください");
+  }
+
+  return fetchWithToken(path, refreshed, init);
 }
 
 export async function listStores(): Promise<StoreResponse[]> {

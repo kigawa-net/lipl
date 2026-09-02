@@ -87,6 +87,40 @@ export function getAccessToken(): string | null {
   return sessionStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
+// Keycloakのaccess tokenは短命（lipl realmでは5分）なため、APIが401を返した際に
+// refresh tokenで再取得する。refresh tokenが無い/失効している場合はnullを返し、
+// 呼び出し側で再ログインへ誘導する。
+export async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = sessionStorage.getItem(REFRESH_TOKEN_KEY);
+  if (!refreshToken) {
+    return null;
+  }
+
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    client_id: CLIENT_ID,
+    refresh_token: refreshToken,
+  });
+
+  const response = await fetch(TOKEN_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    clearTokens();
+    return null;
+  }
+
+  const tokens = (await response.json()) as { access_token: string; refresh_token?: string };
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
+  if (tokens.refresh_token) {
+    sessionStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
+  }
+  return tokens.access_token;
+}
+
 export function isAuthenticated(): boolean {
   return getAccessToken() !== null;
 }
