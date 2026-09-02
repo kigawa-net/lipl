@@ -7,7 +7,10 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class StoreRepositoryTest {
@@ -86,5 +89,56 @@ class StoreRepositoryTest {
         val owner1Stores = repository.listByOwner("owner-1")
 
         assertEquals(1, owner1Stores.size)
+    }
+
+    @Test
+    fun `new store is unpublished by default`() {
+        val request = CreateStoreRequest(
+            name = "店舗",
+            businessCategory = BusinessCategory.CAFE,
+            address = "住所",
+        )
+
+        val created = repository.create("owner-1", request)
+
+        assertFalse(created.published)
+        assertNull(repository.findPublishedBySlug(created.slug))
+    }
+
+    @Test
+    fun `setPublished makes the store visible via findPublishedBySlug`() {
+        val request = CreateStoreRequest(
+            name = "店舗",
+            businessCategory = BusinessCategory.CAFE,
+            address = "住所",
+        )
+        val created = repository.create("owner-1", request)
+
+        val updated = repository.setPublished(created.id, true)
+
+        assertTrue(updated.published)
+        assertEquals(created.slug, repository.findPublishedBySlug(created.slug)?.slug)
+    }
+
+    @Test
+    fun `setPublished to false hides the store again`() {
+        val request = CreateStoreRequest(
+            name = "店舗",
+            businessCategory = BusinessCategory.CAFE,
+            address = "住所",
+        )
+        val created = repository.create("owner-1", request)
+        repository.setPublished(created.id, true)
+
+        repository.setPublished(created.id, false)
+
+        assertNull(repository.findPublishedBySlug(created.slug))
+    }
+
+    @Test
+    fun `setPublished on unknown store throws`() {
+        assertFailsWith<StoreNotFoundException> {
+            repository.setPublished(999L, true)
+        }
     }
 }

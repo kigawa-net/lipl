@@ -15,6 +15,7 @@ object StoresTable : Table("stores") {
     val businessArea = varchar("business_area", 200).nullable()
     val businessHours = varchar("business_hours", 200).nullable()
     val phone = varchar("phone", 20).nullable()
+    val published = bool("published").default(false)
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)
     val updatedAt = timestamp("updated_at").defaultExpression(CurrentTimestamp)
 

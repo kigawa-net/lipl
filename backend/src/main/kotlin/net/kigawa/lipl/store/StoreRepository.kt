@@ -1,11 +1,15 @@
 package net.kigawa.lipl.store
 
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import java.security.SecureRandom
+
+class StoreNotFoundException : Exception("店舗が見つかりません")
 
 private val slugRandom = SecureRandom()
 private const val SLUG_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -56,6 +60,25 @@ class StoreRepository {
             .any()
     }
 
+    fun setPublished(storeId: Long, published: Boolean): StoreResponse = transaction {
+        val updated = StoresTable.update({ StoresTable.id eq storeId }) {
+            it[StoresTable.published] = published
+        }
+        if (updated == 0) throw StoreNotFoundException()
+        toResponse(storeId)
+    }
+
+    fun findPublishedBySlug(slug: String): StoreResponse? = transaction {
+        val row = StoresTable.selectAll()
+            .andWhere { StoresTable.slug eq slug }
+            .andWhere { StoresTable.published eq true }
+            .singleOrNull() ?: return@transaction null
+        val links = StoreSnsLinksTable.selectAll()
+            .andWhere { StoreSnsLinksTable.storeId eq row[StoresTable.id] }
+            .map { SnsLinkInput(SnsPlatform.valueOf(it[StoreSnsLinksTable.platform]), it[StoreSnsLinksTable.url]) }
+        row.toStoreResponse(links)
+    }
+
     private fun generateUniqueSlug(): String {
         repeat(10) {
             val candidate = generateSlug()
@@ -84,5 +107,6 @@ class StoreRepository {
         businessHours = this[StoresTable.businessHours],
         phone = this[StoresTable.phone],
         snsLinks = snsLinks,
+        published = this[StoresTable.published],
     )
 }
