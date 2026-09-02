@@ -28,6 +28,7 @@ import net.kigawa.lipl.photo.PhotoRepository
 import net.kigawa.lipl.photo.photoRoutes
 import net.kigawa.lipl.store.StoreRepository
 import net.kigawa.lipl.store.publicStoreRoutes
+import net.kigawa.lipl.store.storeDeleteRoutes
 import net.kigawa.lipl.store.storeRoutes
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -95,6 +96,9 @@ fun Application.module(
     }
     if (storeRepository != null && photoRepository != null && kaftClient != null && kaftConfig != null) {
         routing { photoRoutes(storeRepository, photoRepository, kaftClient, kaftConfig.publicBaseUrl) }
+    }
+    if (storeRepository != null && menuItemRepository != null && photoRepository != null && kaftClient != null) {
+        routing { storeDeleteRoutes(storeRepository, menuItemRepository, photoRepository, kaftClient) }
     }
     if (storeRepository != null && menuItemRepository != null && photoRepository != null && kaftConfig != null) {
         routing {

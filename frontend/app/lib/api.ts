@@ -128,6 +128,16 @@ export async function setStorePublished(storeId: number, published: boolean): Pr
   return response.json();
 }
 
+export async function deleteStore(storeId: number): Promise<void> {
+  const response = await authorizedFetch(`/stores/${storeId}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(body?.error ?? `店舗の削除に失敗しました（${response.status}）`);
+  }
+}
+
 export async function getPublicStore(slug: string): Promise<PublicStoreResponse | null> {
   const response = await fetch(`/api/public/stores/${slug}`);
   if (response.status === 404) {

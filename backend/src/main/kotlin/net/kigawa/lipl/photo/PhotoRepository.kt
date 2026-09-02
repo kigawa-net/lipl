@@ -53,6 +53,15 @@ class PhotoRepository {
         kaftUuid
     }
 
+    // 店舗削除時に呼び出す。返り値のkaftUuid一覧は呼び出し側でkaftからも削除する。
+    fun deleteByStore(storeId: Long): List<String> = transaction {
+        val kaftUuids = PhotosTable.selectAll()
+            .andWhere { PhotosTable.storeId eq storeId }
+            .map { it[PhotosTable.kaftUuid] }
+        PhotosTable.deleteWhere { PhotosTable.storeId eq storeId }
+        kaftUuids
+    }
+
     fun reorder(storeId: Long, orderedIds: List<Long>) = transaction {
         val existingIds = PhotosTable.selectAll().andWhere { PhotosTable.storeId eq storeId }
             .map { it[PhotosTable.id] }

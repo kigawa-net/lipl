@@ -55,6 +55,10 @@ class MenuItemRepository {
         MenuItemsTable.deleteWhere { MenuItemsTable.id eq menuItemId }
     }
 
+    fun deleteByStore(storeId: Long) = transaction {
+        MenuItemsTable.deleteWhere { MenuItemsTable.storeId eq storeId }
+    }
+
     fun reorder(storeId: Long, orderedIds: List<Long>) = transaction {
         val existingIds = MenuItemsTable.selectAll().andWhere { MenuItemsTable.storeId eq storeId }
             .map { it[MenuItemsTable.id] }

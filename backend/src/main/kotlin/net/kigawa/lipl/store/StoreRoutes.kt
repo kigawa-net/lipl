@@ -7,13 +7,18 @@ import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import net.kigawa.lipl.auth.ownerSub
+import net.kigawa.lipl.kaft.KaftClient
 import net.kigawa.lipl.menu.MenuItemRepository
 import net.kigawa.lipl.photo.PhotoRepository
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("net.kigawa.lipl.store.StoreRoutes")
 
 fun Route.storeRoutes(repository: StoreRepository) {
     authenticate("keycloak") {
@@ -54,6 +59,40 @@ fun Route.storeRoutes(repository: StoreRepository) {
                 val store = repository.setPublished(storeId, request.published)
                 call.respond(store)
             }
+        }
+    }
+}
+
+// 店舗削除。関連する写真はkaftからも削除する（1件失敗しても他の削除・店舗削除自体は続行する）。
+fun Route.storeDeleteRoutes(
+    storeRepository: StoreRepository,
+    menuItemRepository: MenuItemRepository,
+    photoRepository: PhotoRepository,
+    kaftClient: KaftClient,
+) {
+    authenticate("keycloak") {
+        delete("/api/stores/{storeId}") {
+            val principal = call.principal<JWTPrincipal>()
+                ?: return@delete call.respond(HttpStatusCode.Unauthorized)
+            val storeId = call.parameters["storeId"]?.toLongOrNull()
+                ?: return@delete call.respond(HttpStatusCode.BadRequest)
+
+            if (!storeRepository.isOwnedBy(storeId, principal.ownerSub)) {
+                return@delete call.respond(HttpStatusCode.NotFound)
+            }
+
+            val kaftUuids = photoRepository.deleteByStore(storeId)
+            kaftUuids.forEach { uuid ->
+                try {
+                    kaftClient.delete(uuid)
+                } catch (e: Exception) {
+                    logger.warn("kaftの写真削除に失敗しました（uuid=$uuid）", e)
+                }
+            }
+            menuItemRepository.deleteByStore(storeId)
+            storeRepository.delete(storeId)
+
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }
