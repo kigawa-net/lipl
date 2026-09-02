@@ -39,8 +39,14 @@ class KaftClient(private val config: KaftConfig) {
 
     private val algorithm = Algorithm.HMAC256(config.internalJwtSecret)
 
-    private fun internalToken(): String =
+    // kaft側（JwtService.internalVerifier）はissuer="api-server"・audience="kaft"を
+    // 必須クレームとして要求する（kaftのapplication.confのデフォルト値、
+    // KAFT_INTERNAL_JWT_ISSUER/KAFT_INTERNAL_JWT_AUDIENCEで上書き可能だが
+    // lipl側では未設定のため常にデフォルト値を使う）。
+    internal fun internalToken(): String =
         JWT.create()
+            .withIssuer("api-server")
+            .withAudience("kaft")
             .withClaim("scope", "internal")
             .withIssuedAt(Date())
             .withExpiresAt(Date(System.currentTimeMillis() + 60_000))
