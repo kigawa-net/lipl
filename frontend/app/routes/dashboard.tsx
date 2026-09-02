@@ -41,7 +41,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center">
-        <p>読み込み中...</p>
+        <p className="dark:text-stone-300">読み込み中...</p>
       </main>
     );
   }
@@ -49,35 +49,41 @@ export default function Dashboard() {
   return (
     <main className="mx-auto max-w-2xl p-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">店舗一覧</h1>
-        <a href="/logout" className="text-sm text-gray-500 underline">
+        <h1 className="text-2xl font-bold dark:text-stone-100">店舗一覧</h1>
+        <a href="/logout" className="text-sm text-gray-500 underline dark:text-stone-500">
           ログアウト
         </a>
       </div>
 
-      {error && <p className="mb-4 text-red-600">{error}</p>}
+      {error && <p className="mb-4 text-red-600 dark:text-red-400">{error}</p>}
 
       <ul className="mb-8 space-y-2">
         {stores.map((store) => (
-          <li key={store.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <li
+            key={store.id}
+            className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-stone-800 dark:bg-stone-900 dark:shadow-none"
+          >
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-semibold">{store.name}</span>
-              <span className="text-sm text-gray-500">
+              <span className="font-semibold dark:text-stone-100">{store.name}</span>
+              <span className="text-sm text-gray-500 dark:text-stone-400">
                 {BUSINESS_CATEGORY_LABELS[store.businessCategory]} /{" "}
                 {OPERATION_TYPE_LABELS[store.operationType]}
               </span>
               {store.published ? (
-                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-400">
                   公開中
                 </span>
               ) : (
-                <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500">
+                <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500 dark:bg-stone-800 dark:text-stone-400">
                   未公開
                 </span>
               )}
             </div>
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              <a href={`/stores/${store.id}`} className="text-amber-800 underline hover:text-amber-900">
+              <a
+                href={`/stores/${store.id}`}
+                className="text-amber-800 underline hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400"
+              >
                 管理する
               </a>
               {store.published && (
@@ -85,7 +91,7 @@ export default function Dashboard() {
                   href={`/p/${store.slug}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-amber-800 underline hover:text-amber-900"
+                  className="text-amber-800 underline hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400"
                 >
                   公開ページを見る
                 </a>
@@ -94,19 +100,19 @@ export default function Dashboard() {
                 type="button"
                 onClick={() => handleDelete(store)}
                 disabled={deletingId === store.id}
-                className="text-red-600 underline hover:text-red-700 disabled:opacity-50"
+                className="text-red-600 underline hover:text-red-700 disabled:opacity-50 dark:text-red-400 dark:hover:text-red-300"
               >
                 {deletingId === store.id ? "削除中..." : "削除する"}
               </button>
             </div>
           </li>
         ))}
-        {stores.length === 0 && <li className="text-gray-500">まだ店舗がありません</li>}
+        {stores.length === 0 && <li className="text-gray-500 dark:text-stone-500">まだ店舗がありません</li>}
       </ul>
 
       <a
         href="/stores/new"
-        className="inline-block rounded-lg bg-amber-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800"
+        className="inline-block rounded-lg bg-amber-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 dark:bg-amber-700 dark:hover:bg-amber-600"
       >
         + 新しい店舗を登録する
       </a>

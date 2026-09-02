@@ -19,7 +19,7 @@
 
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
+  @apply bg-white dark:bg-stone-950;
 
   @media (prefers-color-scheme: dark) {
     color-scheme: dark;
@@ -29,14 +29,15 @@ body {
 @layer components {
   .form-card {
     @apply rounded-2xl border border-amber-100 bg-white p-6 shadow-[0_1px_2px_rgba(167,53,12,0.04),0_8px_24px_-12px_rgba(167,53,12,0.15)] sm:p-8;
+    @apply dark:border-stone-800 dark:bg-stone-900 dark:shadow-none;
   }
 
   .form-section + .form-section {
-    @apply mt-7 border-t border-amber-100 pt-7;
+    @apply mt-7 border-t border-amber-100 pt-7 dark:border-stone-800;
   }
 
   .form-section-title {
-    @apply mb-4 text-xs font-bold uppercase tracking-widest text-amber-800;
+    @apply mb-4 text-xs font-bold uppercase tracking-widest text-amber-800 dark:text-amber-500;
   }
 
   .field {
@@ -44,23 +45,23 @@ body {
   }
 
   .field-label {
-    @apply flex items-baseline justify-between text-sm font-semibold text-gray-800;
+    @apply flex items-baseline justify-between text-sm font-semibold text-gray-800 dark:text-stone-200;
   }
 
   .field-tag {
-    @apply text-[0.65rem] font-medium tracking-wide text-gray-400;
+    @apply text-[0.65rem] font-medium tracking-wide text-gray-400 dark:text-stone-500;
   }
 
   .field-tag-required {
-    @apply text-[0.65rem] font-semibold tracking-wide text-amber-700;
+    @apply text-[0.65rem] font-semibold tracking-wide text-amber-700 dark:text-amber-500;
   }
 
   .field-hint {
-    @apply text-xs text-gray-400;
+    @apply text-xs text-gray-400 dark:text-stone-500;
   }
 
   .field-count {
-    @apply text-xs tabular-nums text-gray-400;
+    @apply text-xs tabular-nums text-gray-400 dark:text-stone-500;
   }
 
   .field-input,
@@ -69,6 +70,10 @@ body {
     @apply placeholder:text-gray-300;
     @apply focus:border-amber-600 focus:ring-4 focus:ring-amber-600/15;
     @apply hover:border-gray-300;
+    @apply dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:shadow-none;
+    @apply dark:placeholder:text-stone-600;
+    @apply dark:focus:border-amber-500 dark:focus:ring-amber-500/20;
+    @apply dark:hover:border-stone-600;
   }
 
   .field-textarea {
@@ -83,21 +88,30 @@ body {
     @apply w-full appearance-none rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 pr-9 text-sm text-gray-900 shadow-sm transition-all duration-150 outline-none;
     @apply focus:border-amber-600 focus:ring-4 focus:ring-amber-600/15;
     @apply hover:border-gray-300;
+    @apply dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:shadow-none;
+    @apply dark:focus:border-amber-500 dark:focus:ring-amber-500/20;
+    @apply dark:hover:border-stone-600;
+  }
+
+  .field-select option {
+    @apply dark:bg-stone-800 dark:text-stone-100;
   }
 
   .field-select-chevron {
-    @apply pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-amber-700;
+    @apply pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-amber-700 dark:text-amber-500;
   }
 
   .sns-row {
     @apply flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50/60 p-2 pl-3 transition-colors focus-within:border-amber-300 focus-within:bg-white;
+    @apply dark:border-stone-800 dark:bg-stone-800/40 dark:focus-within:border-amber-600 dark:focus-within:bg-stone-800;
   }
 
   .sns-badge {
-    @apply w-[4.5rem] shrink-0 text-xs font-semibold text-gray-500;
+    @apply w-[4.5rem] shrink-0 text-xs font-semibold text-gray-500 dark:text-stone-400;
   }
 
   .sns-input {
     @apply w-full border-0 bg-transparent p-1 text-sm text-gray-900 outline-none placeholder:text-gray-300;
+    @apply dark:text-stone-100 dark:placeholder:text-stone-600;
   }
 }

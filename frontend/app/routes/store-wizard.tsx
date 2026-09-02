@@ -394,8 +394,8 @@ export default function StoreWizard() {
     return (
       <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 p-8 text-center">
         <div className="text-4xl">🎉</div>
-        <h1 className="text-2xl font-bold">公開しました！</h1>
-        <p className="text-gray-600">
+        <h1 className="text-2xl font-bold dark:text-stone-100">公開しました！</h1>
+        <p className="text-gray-600 dark:text-stone-400">
           「{name}」のページが公開されました。
           <br />
           お客様にはこちらのリンクを共有できます。
@@ -404,11 +404,14 @@ export default function StoreWizard() {
           href={`/p/${slug}`}
           target="_blank"
           rel="noreferrer"
-          className="w-full rounded-lg bg-amber-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800"
+          className="w-full rounded-lg bg-amber-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 dark:bg-amber-700 dark:hover:bg-amber-600"
         >
           公開ページを見る
         </a>
-        <a href="/dashboard" className="text-sm text-amber-800 underline hover:text-amber-900">
+        <a
+          href="/dashboard"
+          className="text-sm text-amber-800 underline hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400"
+        >
           ダッシュボードに戻る
         </a>
       </main>
@@ -418,8 +421,8 @@ export default function StoreWizard() {
   return (
     <main className="mx-auto max-w-2xl p-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">店舗を登録</h1>
-        <a href="/dashboard" className="text-sm text-gray-500 underline">
+        <h1 className="text-2xl font-bold dark:text-stone-100">店舗を登録</h1>
+        <a href="/dashboard" className="text-sm text-gray-500 underline dark:text-stone-500">
           あとで続ける
         </a>
       </div>
@@ -430,16 +433,26 @@ export default function StoreWizard() {
             <span
               className={
                 index === stepIndex
-                  ? "flex h-6 w-6 items-center justify-center rounded-full bg-amber-900 text-white"
+                  ? "flex h-6 w-6 items-center justify-center rounded-full bg-amber-900 text-white dark:bg-amber-600"
                   : index < stepIndex
-                    ? "flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-800"
-                    : "flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-gray-400"
+                    ? "flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400"
+                    : "flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-stone-800 dark:text-stone-500"
               }
             >
               {index + 1}
             </span>
-            <span className={index === stepIndex ? "text-gray-900" : "text-gray-400"}>{label}</span>
-            {index < STEP_LABELS.length - 1 && <span className="mx-1 text-gray-300">―</span>}
+            <span
+              className={
+                index === stepIndex
+                  ? "text-gray-900 dark:text-stone-100"
+                  : "text-gray-400 dark:text-stone-600"
+              }
+            >
+              {label}
+            </span>
+            {index < STEP_LABELS.length - 1 && (
+              <span className="mx-1 text-gray-300 dark:text-stone-700">―</span>
+            )}
           </li>
         ))}
       </ol>
@@ -490,7 +503,7 @@ export default function StoreWizard() {
 
           <button
             type="submit"
-            className="mt-7 w-full rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 sm:w-auto sm:px-6"
+            className="mt-7 w-full rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 sm:w-auto sm:px-6 dark:bg-amber-700 dark:hover:bg-amber-600"
           >
             次へ
           </button>
@@ -594,13 +607,13 @@ export default function StoreWizard() {
             <button
               type="button"
               onClick={goBack}
-              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300"
+              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-600"
             >
               戻る
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 sm:px-6"
+              className="rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 sm:px-6 dark:bg-amber-700 dark:hover:bg-amber-600"
             >
               次へ
             </button>
@@ -630,21 +643,21 @@ export default function StoreWizard() {
             </div>
           </div>
 
-          {createError && <p className="mt-4 text-sm text-red-600">{createError}</p>}
+          {createError && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{createError}</p>}
 
           <div className="mt-7 flex gap-3">
             <button
               type="button"
               onClick={goBack}
               disabled={creating}
-              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50"
+              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-600"
             >
               戻る
             </button>
             <button
               type="submit"
               disabled={creating}
-              className="rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 sm:px-6"
+              className="rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 sm:px-6 dark:bg-amber-700 dark:hover:bg-amber-600"
             >
               {creating ? "作成中..." : "次へ"}
             </button>
@@ -660,18 +673,20 @@ export default function StoreWizard() {
               代表的なメニューをいくつか登録しましょう（あとからいつでも追加・編集できます）
             </p>
 
-            {menuError && <p className="mb-4 text-sm text-red-600">{menuError}</p>}
+            {menuError && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{menuError}</p>}
 
             <ul className="mb-5 space-y-2">
               {menuItems.map((item, index) => (
                 <li
                   key={item.id}
-                  className="flex items-center justify-between rounded-lg border border-gray-200 p-3"
+                  className="flex items-center justify-between rounded-lg border border-gray-200 p-3 dark:border-stone-700"
                 >
                   <div>
-                    <span className="font-semibold">{item.name}</span>
+                    <span className="font-semibold dark:text-stone-100">{item.name}</span>
                     {item.price != null && (
-                      <span className="ml-2 text-sm text-gray-500">¥{item.price.toLocaleString()}</span>
+                      <span className="ml-2 text-sm text-gray-500 dark:text-stone-400">
+                        ¥{item.price.toLocaleString()}
+                      </span>
                     )}
                   </div>
                   <div className="flex items-center gap-1">
@@ -679,7 +694,7 @@ export default function StoreWizard() {
                       type="button"
                       onClick={() => handleMoveMenuItem(index, -1)}
                       disabled={index === 0}
-                      className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30"
+                      className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
                     >
                       ↑
                     </button>
@@ -687,24 +702,29 @@ export default function StoreWizard() {
                       type="button"
                       onClick={() => handleMoveMenuItem(index, 1)}
                       disabled={index === menuItems.length - 1}
-                      className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30"
+                      className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
                     >
                       ↓
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDeleteMenuItem(item.id)}
-                      className="rounded border px-2 py-1 text-xs text-red-600"
+                      className="rounded border px-2 py-1 text-xs text-red-600 dark:border-stone-700 dark:text-red-400"
                     >
                       削除
                     </button>
                   </div>
                 </li>
               ))}
-              {menuItems.length === 0 && <li className="text-sm text-gray-400">まだメニューがありません</li>}
+              {menuItems.length === 0 && (
+                <li className="text-sm text-gray-400 dark:text-stone-500">まだメニューがありません</li>
+              )}
             </ul>
 
-            <form onSubmit={handleAddMenuItem} className="space-y-3 border-t border-amber-100 pt-5">
+            <form
+              onSubmit={handleAddMenuItem}
+              className="space-y-3 border-t border-amber-100 pt-5 dark:border-stone-800"
+            >
               <div className="field">
                 <label className="field-label">品名</label>
                 <input
@@ -719,7 +739,7 @@ export default function StoreWizard() {
               <div className="field">
                 <label className="field-label">価格</label>
                 <div className="relative">
-                  <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-sm text-gray-400">
+                  <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-sm text-gray-400 dark:text-stone-500">
                     ¥
                   </span>
                   <input
@@ -745,7 +765,7 @@ export default function StoreWizard() {
               <button
                 type="submit"
                 disabled={menuSubmitting}
-                className="rounded-lg border border-amber-700 px-4 py-2 text-sm font-semibold text-amber-800 transition-colors hover:bg-amber-50 disabled:opacity-50"
+                className="rounded-lg border border-amber-700 px-4 py-2 text-sm font-semibold text-amber-800 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:border-amber-600 dark:text-amber-500 dark:hover:bg-amber-900/30"
               >
                 {menuSubmitting ? "追加中..." : "+ メニューを追加"}
               </button>
@@ -756,7 +776,7 @@ export default function StoreWizard() {
             <button
               type="button"
               onClick={() => setStepIndex(4)}
-              className="rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 sm:px-6"
+              className="rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 sm:px-6 dark:bg-amber-700 dark:hover:bg-amber-600"
             >
               {menuItems.length === 0 ? "スキップして次へ" : "次へ"}
             </button>
@@ -770,7 +790,7 @@ export default function StoreWizard() {
             <p className="form-section-title">写真</p>
             <p className="field-hint mb-4">お店や料理の写真を追加すると、公開ページが魅力的になります</p>
 
-            {photoError && <p className="mb-4 text-sm text-red-600">{photoError}</p>}
+            {photoError && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{photoError}</p>}
 
             <div className="mb-4 grid grid-cols-3 gap-2">
               {photos.map((photo, index) => (
@@ -779,7 +799,7 @@ export default function StoreWizard() {
                     <img
                       src={photoUrl(kaftBaseUrl, photo)}
                       alt={photo.filename}
-                      className="aspect-square w-full rounded border object-cover"
+                      className="aspect-square w-full rounded border object-cover dark:border-stone-700"
                     />
                   )}
                   <div className="flex items-center justify-center gap-1">
@@ -787,7 +807,7 @@ export default function StoreWizard() {
                       type="button"
                       onClick={() => handleMovePhoto(index, -1)}
                       disabled={index === 0}
-                      className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30"
+                      className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
                     >
                       ↑
                     </button>
@@ -795,14 +815,14 @@ export default function StoreWizard() {
                       type="button"
                       onClick={() => handleMovePhoto(index, 1)}
                       disabled={index === photos.length - 1}
-                      className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30"
+                      className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
                     >
                       ↓
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDeletePhoto(photo.id)}
-                      className="rounded border px-2 py-1 text-xs text-red-600"
+                      className="rounded border px-2 py-1 text-xs text-red-600 dark:border-stone-700 dark:text-red-400"
                     >
                       削除
                     </button>
@@ -810,7 +830,9 @@ export default function StoreWizard() {
                 </div>
               ))}
             </div>
-            {photos.length === 0 && <p className="mb-4 text-sm text-gray-400">まだ写真がありません</p>}
+            {photos.length === 0 && (
+              <p className="mb-4 text-sm text-gray-400 dark:text-stone-500">まだ写真がありません</p>
+            )}
 
             <input
               ref={fileInputRef}
@@ -818,9 +840,9 @@ export default function StoreWizard() {
               accept="image/jpeg,image/png,image/webp"
               onChange={handlePhotoSelect}
               disabled={uploading || photos.length >= PHOTO_LIMIT}
-              className="text-sm file:mr-3 file:rounded file:border-0 file:bg-amber-100 file:px-3 file:py-1.5 file:text-amber-900 file:transition-colors hover:file:bg-amber-200"
+              className="text-sm file:mr-3 file:rounded file:border-0 file:bg-amber-100 file:px-3 file:py-1.5 file:text-amber-900 file:transition-colors hover:file:bg-amber-200 dark:text-stone-300 dark:file:bg-amber-900/40 dark:file:text-amber-400 dark:hover:file:bg-amber-900/60"
             />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-gray-500 dark:text-stone-500">
               {uploading
                 ? "アップロード中..."
                 : `JPEG・PNG・WebP、10MBまで（${photos.length}/${PHOTO_LIMIT}枚）`}
@@ -831,7 +853,7 @@ export default function StoreWizard() {
             <button
               type="button"
               onClick={() => setStepIndex(5)}
-              className="rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 sm:px-6"
+              className="rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 sm:px-6 dark:bg-amber-700 dark:hover:bg-amber-600"
             >
               {photos.length === 0 ? "スキップして次へ" : "次へ"}
             </button>
@@ -846,29 +868,31 @@ export default function StoreWizard() {
             <p className="field-hint mb-5">内容を確認して、問題なければ公開しましょう。公開後もいつでも編集できます。</p>
 
             <dl className="space-y-3 text-sm">
-              <div className="flex justify-between border-b border-amber-100 pb-2">
-                <dt className="text-gray-500">店名</dt>
-                <dd className="font-semibold">{name}</dd>
+              <div className="flex justify-between border-b border-amber-100 pb-2 dark:border-stone-800">
+                <dt className="text-gray-500 dark:text-stone-400">店名</dt>
+                <dd className="font-semibold dark:text-stone-100">{name}</dd>
               </div>
-              <div className="flex justify-between border-b border-amber-100 pb-2">
-                <dt className="text-gray-500">業種</dt>
-                <dd>{BUSINESS_CATEGORY_LABELS[businessCategory]}</dd>
+              <div className="flex justify-between border-b border-amber-100 pb-2 dark:border-stone-800">
+                <dt className="text-gray-500 dark:text-stone-400">業種</dt>
+                <dd className="dark:text-stone-200">{BUSINESS_CATEGORY_LABELS[businessCategory]}</dd>
               </div>
-              <div className="flex justify-between border-b border-amber-100 pb-2">
-                <dt className="text-gray-500">{operationType === "FIXED" ? "所在地" : "出店エリア"}</dt>
-                <dd>{operationType === "FIXED" ? address : businessArea}</dd>
+              <div className="flex justify-between border-b border-amber-100 pb-2 dark:border-stone-800">
+                <dt className="text-gray-500 dark:text-stone-400">
+                  {operationType === "FIXED" ? "所在地" : "出店エリア"}
+                </dt>
+                <dd className="dark:text-stone-200">{operationType === "FIXED" ? address : businessArea}</dd>
               </div>
-              <div className="flex justify-between border-b border-amber-100 pb-2">
-                <dt className="text-gray-500">メニュー</dt>
-                <dd>{menuItems.length}品</dd>
+              <div className="flex justify-between border-b border-amber-100 pb-2 dark:border-stone-800">
+                <dt className="text-gray-500 dark:text-stone-400">メニュー</dt>
+                <dd className="dark:text-stone-200">{menuItems.length}品</dd>
               </div>
               <div className="flex justify-between pb-2">
-                <dt className="text-gray-500">写真</dt>
-                <dd>{photos.length}枚</dd>
+                <dt className="text-gray-500 dark:text-stone-400">写真</dt>
+                <dd className="dark:text-stone-200">{photos.length}枚</dd>
               </div>
             </dl>
 
-            {publishError && <p className="mt-4 text-sm text-red-600">{publishError}</p>}
+            {publishError && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{publishError}</p>}
           </div>
 
           <div className="mt-7 flex gap-3">
@@ -876,7 +900,7 @@ export default function StoreWizard() {
               type="button"
               onClick={goBack}
               disabled={publishing}
-              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50"
+              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-600"
             >
               戻る
             </button>
@@ -884,7 +908,7 @@ export default function StoreWizard() {
               type="button"
               onClick={handlePublish}
               disabled={publishing}
-              className="rounded-lg bg-amber-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50"
+              className="rounded-lg bg-amber-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
             >
               {publishing ? "公開中..." : "公開する"}
             </button>
