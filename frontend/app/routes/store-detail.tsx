@@ -288,43 +288,66 @@ export default function StoreDetail() {
       </ul>
 
       <h2 className="mb-4 text-xl font-bold">メニューを追加</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="mb-1 block text-sm font-medium">品名</label>
-          <input
-            required
-            maxLength={50}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full rounded border p-2"
-          />
-        </div>
+      <form onSubmit={handleSubmit} className="form-card">
+        <div className="space-y-5">
+          <div className="field">
+            <label className="field-label">
+              <span>品名</span>
+              <span className="flex items-center gap-2">
+                <span className="field-tag-required">必須</span>
+                <span className="field-count">{name.length}/50</span>
+              </span>
+            </label>
+            <input
+              required
+              maxLength={50}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="例: 自家焙煎ブレンド"
+              className="field-input"
+            />
+          </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium">価格（税込・未入力で非表示）</label>
-          <input
-            type="number"
-            min={0}
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            className="w-full rounded border p-2"
-          />
-        </div>
+          <div className="field">
+            <label className="field-label">
+              <span>価格</span>
+              <span className="field-tag">税込・未入力で非表示</span>
+            </label>
+            <div className="relative">
+              <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-sm text-gray-400">
+                ¥
+              </span>
+              <input
+                type="number"
+                min={0}
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="0"
+                className="field-input pl-7"
+              />
+            </div>
+          </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium">説明文</label>
-          <textarea
-            maxLength={200}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full rounded border p-2"
-          />
+          <div className="field">
+            <label className="field-label">
+              <span>説明文</span>
+              <span className="field-count">{description.length}/200</span>
+            </label>
+            <textarea
+              rows={3}
+              maxLength={200}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="使用している豆や味わいの特徴など"
+              className="field-textarea field-input"
+            />
+          </div>
         </div>
 
         <button
           type="submit"
           disabled={submitting}
-          className="rounded bg-amber-900 px-4 py-2 text-white transition-colors hover:bg-amber-800 disabled:opacity-50"
+          className="mt-6 w-full rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 sm:w-auto sm:px-6"
         >
           {submitting ? "追加中..." : "追加する"}
         </button>
