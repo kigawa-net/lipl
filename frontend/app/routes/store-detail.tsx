@@ -201,7 +201,7 @@ export default function StoreDetail() {
                 type="button"
                 onClick={() => handlePhotoMove(index, -1)}
                 disabled={index === 0}
-                className="rounded border px-2 py-1 text-xs disabled:opacity-30"
+                className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit"
               >
                 ↑
               </button>
@@ -209,7 +209,7 @@ export default function StoreDetail() {
                 type="button"
                 onClick={() => handlePhotoMove(index, 1)}
                 disabled={index === photos.length - 1}
-                className="rounded border px-2 py-1 text-xs disabled:opacity-30"
+                className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit"
               >
                 ↓
               </button>
@@ -233,7 +233,7 @@ export default function StoreDetail() {
           accept="image/jpeg,image/png,image/webp"
           onChange={handlePhotoSelect}
           disabled={uploading || photos.length >= PHOTO_LIMIT}
-          className="text-sm"
+          className="text-sm file:mr-3 file:rounded file:border-0 file:bg-amber-100 file:px-3 file:py-1.5 file:text-amber-900 file:transition-colors hover:file:bg-amber-200"
         />
         <p className="mt-1 text-xs text-gray-500">
           {uploading
@@ -262,7 +262,7 @@ export default function StoreDetail() {
                 type="button"
                 onClick={() => handleMove(index, -1)}
                 disabled={index === 0}
-                className="rounded border px-2 py-1 text-sm disabled:opacity-30"
+                className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit"
               >
                 ↑
               </button>
@@ -270,7 +270,7 @@ export default function StoreDetail() {
                 type="button"
                 onClick={() => handleMove(index, 1)}
                 disabled={index === menuItems.length - 1}
-                className="rounded border px-2 py-1 text-sm disabled:opacity-30"
+                className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit"
               >
                 ↓
               </button>
@@ -324,7 +324,7 @@ export default function StoreDetail() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded bg-black px-4 py-2 text-white disabled:opacity-50"
+          className="rounded bg-amber-900 px-4 py-2 text-white transition-colors hover:bg-amber-800 disabled:opacity-50"
         >
           {submitting ? "追加中..." : "追加する"}
         </button>

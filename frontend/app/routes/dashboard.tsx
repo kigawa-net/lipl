@@ -141,7 +141,7 @@ export default function Dashboard() {
               {BUSINESS_CATEGORY_LABELS[store.businessCategory]} /{" "}
               {OPERATION_TYPE_LABELS[store.operationType]}
             </span>
-            <a href={`/stores/${store.id}`} className="ml-2 text-sm text-blue-600 underline">
+            <a href={`/stores/${store.id}`} className="ml-2 text-sm text-amber-800 underline hover:text-amber-900">
               メニュー管理
             </a>
           </li>
@@ -263,7 +263,7 @@ export default function Dashboard() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded bg-black px-4 py-2 text-white disabled:opacity-50"
+          className="rounded bg-amber-900 px-4 py-2 text-white transition-colors hover:bg-amber-800 disabled:opacity-50"
         >
           {submitting ? "作成中..." : "作成する"}
         </button>
