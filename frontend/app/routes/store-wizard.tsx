@@ -6,6 +6,8 @@ import {
   deleteMenuItem,
   deletePhoto,
   getKaftBaseUrl,
+  listMenuItems,
+  listPhotos,
   photoUrl,
   reorderMenuItems,
   reorderPhotos,
@@ -31,6 +33,50 @@ const STEP_LABELS = ["基本情報", "営業形態", "SNS", "メニュー", "写
 const PHOTO_LIMIT = 15;
 const MAX_PHOTO_SIZE = 10 * 1024 * 1024;
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+// ページをリロードしても入力内容が消えないよう、進行中のウィザードの状態を
+// sessionStorageに保存する（タブを閉じると破棄される。メニュー・写真は
+// 追加時点でサーバーに保存済みのため、ここには含めずstoreIdから再取得する）。
+const DRAFT_KEY = "lipl.wizard.draft";
+
+interface WizardDraft {
+  stepIndex: number;
+  name: string;
+  businessCategory: BusinessCategory;
+  operationType: OperationType;
+  address: string;
+  businessArea: string;
+  businessHours: string;
+  phone: string;
+  snsUrls: Record<SnsPlatform, string>;
+  storeId: number | null;
+  slug: string | null;
+}
+
+function loadDraft(): WizardDraft | null {
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as WizardDraft) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(draft: WizardDraft): void {
+  try {
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    // プライベートブラウジング等でsessionStorageが使えない場合は諦める
+  }
+}
+
+function clearDraft(): void {
+  try {
+    sessionStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // noop
+  }
+}
 
 function ChevronIcon() {
   return (
@@ -91,11 +137,68 @@ export default function StoreWizard() {
   const [publishError, setPublishError] = useState<string | null>(null);
   const [published, setPublished] = useState(false);
 
+  const [restored, setRestored] = useState(false);
+
   useEffect(() => {
     if (!isAuthenticated()) {
       navigate("/login", { replace: true });
+      return;
     }
+
+    const draft = loadDraft();
+    if (draft) {
+      setStepIndex(draft.stepIndex);
+      setName(draft.name);
+      setBusinessCategory(draft.businessCategory);
+      setOperationType(draft.operationType);
+      setAddress(draft.address);
+      setBusinessArea(draft.businessArea);
+      setBusinessHours(draft.businessHours);
+      setPhone(draft.phone);
+      setSnsUrls(draft.snsUrls);
+      setStoreId(draft.storeId);
+      setSlug(draft.slug);
+
+      if (draft.storeId !== null) {
+        const id = draft.storeId;
+        listMenuItems(id).then(setMenuItems).catch(() => {});
+        listPhotos(id).then(setPhotos).catch(() => {});
+      }
+    }
+    setRestored(true);
   }, [navigate]);
+
+  // 復元処理が終わるまでは保存しない（空の初期状態で保存済みの下書きを
+  // 上書きしてしまうのを防ぐため）。
+  useEffect(() => {
+    if (!restored) return;
+    saveDraft({
+      stepIndex,
+      name,
+      businessCategory,
+      operationType,
+      address,
+      businessArea,
+      businessHours,
+      phone,
+      snsUrls,
+      storeId,
+      slug,
+    });
+  }, [
+    restored,
+    stepIndex,
+    name,
+    businessCategory,
+    operationType,
+    address,
+    businessArea,
+    businessHours,
+    phone,
+    snsUrls,
+    storeId,
+    slug,
+  ]);
 
   useEffect(() => {
     if (stepIndex === 4 && kaftBaseUrl === null) {
@@ -278,6 +381,7 @@ export default function StoreWizard() {
     setPublishError(null);
     try {
       await setStorePublished(storeId, true);
+      clearDraft();
       setPublished(true);
     } catch (e) {
       setPublishError((e as Error).message);
