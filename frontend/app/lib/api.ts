@@ -41,6 +41,21 @@ export interface StoreResponse {
   businessHours: string | null;
   phone: string | null;
   snsLinks: SnsLinkInput[];
+  published: boolean;
+}
+
+export interface PublicStoreResponse {
+  name: string;
+  businessCategory: BusinessCategory;
+  operationType: OperationType;
+  address: string | null;
+  businessArea: string | null;
+  businessHours: string | null;
+  phone: string | null;
+  snsLinks: SnsLinkInput[];
+  menuItems: MenuItemResponse[];
+  photos: PhotoResponse[];
+  kaftBaseUrl: string;
 }
 
 function fetchWithToken(path: string, token: string, init?: RequestInit): Promise<Response> {
@@ -94,6 +109,32 @@ export async function createStore(request: CreateStoreRequest): Promise<StoreRes
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as { error?: string } | null;
     throw new Error(body?.error ?? `店舗の作成に失敗しました（${response.status}）`);
+  }
+  return response.json();
+}
+
+export async function setStorePublished(storeId: number, published: boolean): Promise<StoreResponse> {
+  const response = await authorizedFetch(`/stores/${storeId}/publish`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ published }),
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(
+      body?.error ?? `店舗の${published ? "公開" : "非公開化"}に失敗しました（${response.status}）`,
+    );
+  }
+  return response.json();
+}
+
+export async function getPublicStore(slug: string): Promise<PublicStoreResponse | null> {
+  const response = await fetch(`/api/public/stores/${slug}`);
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`店舗情報の取得に失敗しました（${response.status}）`);
   }
   return response.json();
 }

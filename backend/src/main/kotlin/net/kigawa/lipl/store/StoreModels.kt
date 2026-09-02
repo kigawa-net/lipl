@@ -1,6 +1,8 @@
 package net.kigawa.lipl.store
 
 import kotlinx.serialization.Serializable
+import net.kigawa.lipl.menu.MenuItemResponse
+import net.kigawa.lipl.photo.PhotoResponse
 
 @Serializable
 enum class BusinessCategory {
@@ -50,4 +52,26 @@ data class StoreResponse(
     val businessHours: String?,
     val phone: String?,
     val snsLinks: List<SnsLinkInput>,
+    val published: Boolean,
+)
+
+@Serializable
+data class UpdatePublishedRequest(
+    val published: Boolean,
+)
+
+// 公開ページ（/p/{slug}）が返す情報。ownerSub等の内部情報は含まない。
+@Serializable
+data class PublicStoreResponse(
+    val name: String,
+    val businessCategory: BusinessCategory,
+    val operationType: OperationType,
+    val address: String?,
+    val businessArea: String?,
+    val businessHours: String?,
+    val phone: String?,
+    val snsLinks: List<SnsLinkInput>,
+    val menuItems: List<MenuItemResponse>,
+    val photos: List<PhotoResponse>,
+    val kaftBaseUrl: String,
 )
