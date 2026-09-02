@@ -169,7 +169,7 @@ export default function StoreDetail() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center">
-        <p>読み込み中...</p>
+        <p className="dark:text-stone-300">読み込み中...</p>
       </main>
     );
   }
@@ -177,14 +177,14 @@ export default function StoreDetail() {
   return (
     <main className="mx-auto max-w-2xl p-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">店舗管理</h1>
-        <a href="/dashboard" className="text-sm text-gray-500 underline">
+        <h1 className="text-2xl font-bold dark:text-stone-100">店舗管理</h1>
+        <a href="/dashboard" className="text-sm text-gray-500 underline dark:text-stone-500">
           店舗一覧に戻る
         </a>
       </div>
 
-      <h2 className="mb-4 text-xl font-bold">写真</h2>
-      {photoError && <p className="mb-4 text-red-600">{photoError}</p>}
+      <h2 className="mb-4 text-xl font-bold dark:text-stone-100">写真</h2>
+      {photoError && <p className="mb-4 text-red-600 dark:text-red-400">{photoError}</p>}
 
       <div className="mb-4 grid grid-cols-3 gap-2">
         {photos.map((photo, index) => (
@@ -193,7 +193,7 @@ export default function StoreDetail() {
               <img
                 src={photoUrl(kaftBaseUrl, photo)}
                 alt={photo.filename}
-                className="aspect-square w-full rounded border object-cover"
+                className="aspect-square w-full rounded border object-cover dark:border-stone-700"
               />
             )}
             <div className="flex items-center justify-center gap-1">
@@ -201,7 +201,7 @@ export default function StoreDetail() {
                 type="button"
                 onClick={() => handlePhotoMove(index, -1)}
                 disabled={index === 0}
-                className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit"
+                className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
               >
                 ↑
               </button>
@@ -209,14 +209,14 @@ export default function StoreDetail() {
                 type="button"
                 onClick={() => handlePhotoMove(index, 1)}
                 disabled={index === photos.length - 1}
-                className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit"
+                className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
               >
                 ↓
               </button>
               <button
                 type="button"
                 onClick={() => handlePhotoDelete(photo.id)}
-                className="rounded border px-2 py-1 text-xs text-red-600"
+                className="rounded border px-2 py-1 text-xs text-red-600 dark:border-stone-700 dark:text-red-400"
               >
                 削除
               </button>
@@ -224,7 +224,7 @@ export default function StoreDetail() {
           </div>
         ))}
       </div>
-      {photos.length === 0 && <p className="mb-4 text-gray-500">まだ写真がありません</p>}
+      {photos.length === 0 && <p className="mb-4 text-gray-500 dark:text-stone-500">まだ写真がありません</p>}
 
       <div className="mb-8">
         <input
@@ -233,28 +233,33 @@ export default function StoreDetail() {
           accept="image/jpeg,image/png,image/webp"
           onChange={handlePhotoSelect}
           disabled={uploading || photos.length >= PHOTO_LIMIT}
-          className="text-sm file:mr-3 file:rounded file:border-0 file:bg-amber-100 file:px-3 file:py-1.5 file:text-amber-900 file:transition-colors hover:file:bg-amber-200"
+          className="text-sm file:mr-3 file:rounded file:border-0 file:bg-amber-100 file:px-3 file:py-1.5 file:text-amber-900 file:transition-colors hover:file:bg-amber-200 dark:text-stone-300 dark:file:bg-amber-900/40 dark:file:text-amber-400 dark:hover:file:bg-amber-900/60"
         />
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-gray-500 dark:text-stone-500">
           {uploading
             ? "アップロード中..."
             : `JPEG・PNG・WebP、10MBまで（${photos.length}/${PHOTO_LIMIT}枚）`}
         </p>
       </div>
 
-      <h2 className="mb-4 text-xl font-bold">メニュー</h2>
-      {error && <p className="mb-4 text-red-600">{error}</p>}
+      <h2 className="mb-4 text-xl font-bold dark:text-stone-100">メニュー</h2>
+      {error && <p className="mb-4 text-red-600 dark:text-red-400">{error}</p>}
 
       <ul className="mb-8 space-y-2">
         {menuItems.map((item, index) => (
-          <li key={item.id} className="flex items-center justify-between rounded border p-3">
+          <li
+            key={item.id}
+            className="flex items-center justify-between rounded border p-3 dark:border-stone-700"
+          >
             <div>
-              <span className="font-semibold">{item.name}</span>
+              <span className="font-semibold dark:text-stone-100">{item.name}</span>
               {item.price != null && (
-                <span className="ml-2 text-sm text-gray-500">¥{item.price.toLocaleString()}</span>
+                <span className="ml-2 text-sm text-gray-500 dark:text-stone-400">
+                  ¥{item.price.toLocaleString()}
+                </span>
               )}
               {item.description && (
-                <p className="text-sm text-gray-500">{item.description}</p>
+                <p className="text-sm text-gray-500 dark:text-stone-400">{item.description}</p>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -262,7 +267,7 @@ export default function StoreDetail() {
                 type="button"
                 onClick={() => handleMove(index, -1)}
                 disabled={index === 0}
-                className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit"
+                className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
               >
                 ↑
               </button>
@@ -270,24 +275,26 @@ export default function StoreDetail() {
                 type="button"
                 onClick={() => handleMove(index, 1)}
                 disabled={index === menuItems.length - 1}
-                className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit"
+                className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
               >
                 ↓
               </button>
               <button
                 type="button"
                 onClick={() => handleDelete(item.id)}
-                className="rounded border px-2 py-1 text-sm text-red-600"
+                className="rounded border px-2 py-1 text-sm text-red-600 dark:border-stone-700 dark:text-red-400"
               >
                 削除
               </button>
             </div>
           </li>
         ))}
-        {menuItems.length === 0 && <li className="text-gray-500">まだメニューがありません</li>}
+        {menuItems.length === 0 && (
+          <li className="text-gray-500 dark:text-stone-500">まだメニューがありません</li>
+        )}
       </ul>
 
-      <h2 className="mb-4 text-xl font-bold">メニューを追加</h2>
+      <h2 className="mb-4 text-xl font-bold dark:text-stone-100">メニューを追加</h2>
       <form onSubmit={handleSubmit} className="form-card">
         <div className="space-y-5">
           <div className="field">
@@ -314,7 +321,7 @@ export default function StoreDetail() {
               <span className="field-tag">税込・未入力で非表示</span>
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-sm text-gray-400">
+              <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-sm text-gray-400 dark:text-stone-500">
                 ¥
               </span>
               <input
@@ -347,7 +354,7 @@ export default function StoreDetail() {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-6 w-full rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 sm:w-auto sm:px-6"
+          className="mt-6 w-full rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 sm:w-auto sm:px-6 dark:bg-amber-700 dark:hover:bg-amber-600"
         >
           {submitting ? "追加中..." : "追加する"}
         </button>
