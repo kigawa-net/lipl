@@ -109,19 +109,31 @@ export default function PublicStore() {
               {store.menuItems.map((item) => (
                 <li
                   key={item.id}
-                  className="rounded-lg border border-amber-100 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
+                  className="flex gap-4 rounded-lg border border-amber-100 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
                 >
-                  <div className="flex items-baseline justify-between gap-4">
-                    <span className="font-semibold text-gray-900 dark:text-stone-100">{item.name}</span>
-                    {item.price != null && (
-                      <span className="shrink-0 text-sm text-gray-500 dark:text-stone-400">
-                        ¥{item.price.toLocaleString()}
-                      </span>
+                  {item.photoKaftUuid && (
+                    <img
+                      src={photoUrl(store.kaftBaseUrl, {
+                        kaftUuid: item.photoKaftUuid,
+                        filename: item.photoFilename ?? "",
+                      })}
+                      alt={item.name}
+                      className="h-16 w-16 shrink-0 rounded object-cover"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-4">
+                      <span className="font-semibold text-gray-900 dark:text-stone-100">{item.name}</span>
+                      {item.price != null && (
+                        <span className="shrink-0 text-sm text-gray-500 dark:text-stone-400">
+                          ¥{item.price.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                    {item.description && (
+                      <p className="mt-1 text-sm text-gray-500 dark:text-stone-400">{item.description}</p>
                     )}
                   </div>
-                  {item.description && (
-                    <p className="mt-1 text-sm text-gray-500 dark:text-stone-400">{item.description}</p>
-                  )}
                 </li>
               ))}
             </ul>

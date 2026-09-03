@@ -91,8 +91,8 @@ fun Application.module(
     if (storeRepository != null) {
         routing { storeRoutes(storeRepository) }
     }
-    if (storeRepository != null && menuItemRepository != null) {
-        routing { menuItemRoutes(storeRepository, menuItemRepository) }
+    if (storeRepository != null && menuItemRepository != null && kaftClient != null && kaftConfig != null) {
+        routing { menuItemRoutes(storeRepository, menuItemRepository, kaftClient, kaftConfig.publicBaseUrl) }
     }
     if (storeRepository != null && photoRepository != null && kaftClient != null && kaftConfig != null) {
         routing { photoRoutes(storeRepository, photoRepository, kaftClient, kaftConfig.publicBaseUrl) }
