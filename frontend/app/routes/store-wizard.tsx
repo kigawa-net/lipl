@@ -4,6 +4,7 @@ import {
   createMenuItem,
   createStore,
   deleteMenuItem,
+  deleteMenuItemPhoto,
   deletePhoto,
   getKaftBaseUrl,
   listMenuItems,
@@ -12,6 +13,7 @@ import {
   reorderMenuItems,
   reorderPhotos,
   setStorePublished,
+  uploadMenuItemPhoto,
   uploadPhoto,
   type BusinessCategory,
   type MenuItemResponse,
@@ -124,6 +126,7 @@ export default function StoreWizard() {
   const [menuDescription, setMenuDescription] = useState("");
   const [menuSubmitting, setMenuSubmitting] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
+  const [menuPhotoUploadingId, setMenuPhotoUploadingId] = useState<number | null>(null);
 
   // 写真
   const [photos, setPhotos] = useState<PhotoResponse[]>([]);
@@ -201,12 +204,14 @@ export default function StoreWizard() {
   ]);
 
   useEffect(() => {
-    if (stepIndex === 4 && kaftBaseUrl === null) {
+    // メニュー（写真サムネイル表示）・写真ステップの両方で必要なので、
+    // storeId確定後（=ステップ3以降に入れる状態になった時点で）取得しておく。
+    if (storeId !== null && kaftBaseUrl === null) {
       getKaftBaseUrl()
         .then(setKaftBaseUrl)
         .catch((e: Error) => setPhotoError(e.message));
     }
-  }, [stepIndex, kaftBaseUrl]);
+  }, [storeId, kaftBaseUrl]);
 
   function handleCategoryChange(category: BusinessCategory) {
     setBusinessCategory(category);
@@ -308,6 +313,48 @@ export default function StoreWizard() {
       await reorderMenuItems(
         storeId,
         reordered.map((item) => item.id),
+      );
+    } catch (e) {
+      setMenuError((e as Error).message);
+    }
+  }
+
+  async function handleMenuPhotoSelect(menuItemId: number, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || storeId === null) return;
+
+    setMenuError(null);
+
+    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+      setMenuError("JPEG・PNG・WebP形式の画像のみアップロードできます");
+      return;
+    }
+    if (file.size > MAX_PHOTO_SIZE) {
+      setMenuError("画像サイズは10MB以下にしてください");
+      return;
+    }
+
+    setMenuPhotoUploadingId(menuItemId);
+    try {
+      const updated = await uploadMenuItemPhoto(storeId, menuItemId, file);
+      setMenuItems((prev) => prev.map((item) => (item.id === menuItemId ? updated : item)));
+    } catch (e) {
+      setMenuError((e as Error).message);
+    } finally {
+      setMenuPhotoUploadingId(null);
+    }
+  }
+
+  async function handleMenuPhotoRemove(menuItemId: number) {
+    if (storeId === null) return;
+    setMenuError(null);
+    try {
+      await deleteMenuItemPhoto(storeId, menuItemId);
+      setMenuItems((prev) =>
+        prev.map((item) =>
+          item.id === menuItemId ? { ...item, photoKaftUuid: null, photoFilename: null } : item,
+        ),
       );
     } catch (e) {
       setMenuError((e as Error).message);
@@ -679,17 +726,49 @@ export default function StoreWizard() {
               {menuItems.map((item, index) => (
                 <li
                   key={item.id}
-                  className="flex items-center justify-between rounded-lg border border-gray-200 p-3 dark:border-stone-700"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 p-3 dark:border-stone-700"
                 >
-                  <div>
-                    <span className="font-semibold dark:text-stone-100">{item.name}</span>
-                    {item.price != null && (
-                      <span className="ml-2 text-sm text-gray-500 dark:text-stone-400">
-                        ¥{item.price.toLocaleString()}
-                      </span>
+                  <div className="flex min-w-0 items-center gap-3">
+                    {item.photoKaftUuid && kaftBaseUrl ? (
+                      <img
+                        src={photoUrl(kaftBaseUrl, {
+                          kaftUuid: item.photoKaftUuid,
+                          filename: item.photoFilename ?? "",
+                        })}
+                        alt={item.name}
+                        className="h-12 w-12 shrink-0 rounded object-cover dark:border dark:border-stone-700"
+                      />
+                    ) : (
+                      <label className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded border border-dashed text-[0.6rem] text-gray-400 transition-colors hover:border-amber-500 hover:text-amber-700 dark:border-stone-700 dark:text-stone-600 dark:hover:border-amber-600 dark:hover:text-amber-500">
+                        {menuPhotoUploadingId === item.id ? "..." : "写真"}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={(e) => handleMenuPhotoSelect(item.id, e)}
+                          disabled={menuPhotoUploadingId === item.id}
+                          className="hidden"
+                        />
+                      </label>
                     )}
+                    <div className="min-w-0">
+                      <span className="font-semibold dark:text-stone-100">{item.name}</span>
+                      {item.price != null && (
+                        <span className="ml-2 text-sm text-gray-500 dark:text-stone-400">
+                          ¥{item.price.toLocaleString()}
+                        </span>
+                      )}
+                      {item.photoKaftUuid && (
+                        <button
+                          type="button"
+                          onClick={() => handleMenuPhotoRemove(item.id)}
+                          className="block text-xs text-red-600 underline hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                        >
+                          写真を削除
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex shrink-0 items-center gap-1">
                     <button
                       type="button"
                       onClick={() => handleMoveMenuItem(index, -1)}

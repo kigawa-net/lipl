@@ -162,6 +162,8 @@ export interface MenuItemResponse {
   price: number | null;
   description: string | null;
   displayOrder: number;
+  photoKaftUuid: string | null;
+  photoFilename: string | null;
 }
 
 async function menuItemErrorMessage(response: Response, fallback: string): Promise<string> {
@@ -212,6 +214,57 @@ export async function reorderMenuItems(storeId: number, orderedIds: number[]): P
   }
 }
 
+// アップロード本体（ファイルのバイト列）はブラウザからkaftへ直接PUTされ、
+// lipl backendは経由しない（店舗写真と同じアーキテクチャ上の制約）。
+export async function uploadMenuItemPhoto(
+  storeId: number,
+  menuItemId: number,
+  file: File,
+): Promise<MenuItemResponse> {
+  const tokenResponse = await authorizedFetch(
+    `/stores/${storeId}/menu-items/${menuItemId}/photo/upload-token`,
+    { method: "POST" },
+  );
+  if (!tokenResponse.ok) {
+    throw new Error(await menuItemErrorMessage(tokenResponse, "アップロード準備に失敗しました"));
+  }
+  const { uuid, uploadToken, kaftBaseUrl }: UploadTokenResponse = await tokenResponse.json();
+
+  const putResponse = await fetch(`${kaftBaseUrl}/files/${uuid}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${uploadToken}`,
+      "Content-Type": file.type || "application/octet-stream",
+    },
+    body: file,
+  });
+  if (!putResponse.ok) {
+    throw new Error(`画像のアップロードに失敗しました（${putResponse.status}）`);
+  }
+
+  const confirmResponse = await authorizedFetch(
+    `/stores/${storeId}/menu-items/${menuItemId}/photo/confirm`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uuid, filename: file.name }),
+    },
+  );
+  if (!confirmResponse.ok) {
+    throw new Error(await menuItemErrorMessage(confirmResponse, "写真の登録に失敗しました"));
+  }
+  return confirmResponse.json();
+}
+
+export async function deleteMenuItemPhoto(storeId: number, menuItemId: number): Promise<void> {
+  const response = await authorizedFetch(`/stores/${storeId}/menu-items/${menuItemId}/photo`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    throw new Error(await menuItemErrorMessage(response, "写真の削除に失敗しました"));
+  }
+}
+
 export interface PhotoResponse {
   id: number;
   storeId: number;
@@ -231,7 +284,7 @@ async function photoErrorMessage(response: Response, fallback: string): Promise<
   return body?.error ?? `${fallback}（${response.status}）`;
 }
 
-export function photoUrl(kaftBaseUrl: string, photo: PhotoResponse): string {
+export function photoUrl(kaftBaseUrl: string, photo: { kaftUuid: string; filename: string }): string {
   return `${kaftBaseUrl}/files/${photo.kaftUuid}/${encodeURIComponent(photo.filename)}`;
 }
 

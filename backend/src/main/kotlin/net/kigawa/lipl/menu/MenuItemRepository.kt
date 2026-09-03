@@ -44,19 +44,56 @@ class MenuItemRepository {
         toResponse(id)
     }
 
-    fun delete(storeId: Long, menuItemId: Long) = transaction {
-        val exists = MenuItemsTable.selectAll()
+    // 削除した品目に写真が設定されていた場合、そのkaftUuidを返す（呼び出し側でkaftからも削除する）。
+    fun delete(storeId: Long, menuItemId: Long): String? = transaction {
+        val row = MenuItemsTable.selectAll()
             .andWhere { MenuItemsTable.id eq menuItemId }
             .andWhere { MenuItemsTable.storeId eq storeId }
-            .any()
-        if (!exists) {
-            throw MenuItemNotFoundException()
-        }
+            .singleOrNull() ?: throw MenuItemNotFoundException()
         MenuItemsTable.deleteWhere { MenuItemsTable.id eq menuItemId }
+        row[MenuItemsTable.photoKaftUuid]
     }
 
-    fun deleteByStore(storeId: Long) = transaction {
+    // 店舗削除時に呼び出す。削除した品目のうち写真が設定されていたもののkaftUuid一覧を返す。
+    fun deleteByStore(storeId: Long): List<String> = transaction {
+        val kaftUuids = MenuItemsTable.selectAll()
+            .andWhere { MenuItemsTable.storeId eq storeId }
+            .mapNotNull { it[MenuItemsTable.photoKaftUuid] }
         MenuItemsTable.deleteWhere { MenuItemsTable.storeId eq storeId }
+        kaftUuids
+    }
+
+    // 写真を設定する。既に写真が設定されていた場合は古いkaftUuidを返す（呼び出し側でkaftから削除する）。
+    fun setPhoto(storeId: Long, menuItemId: Long, kaftUuid: String, filename: String): Pair<MenuItemResponse, String?> =
+        transaction {
+            val row = MenuItemsTable.selectAll()
+                .andWhere { MenuItemsTable.id eq menuItemId }
+                .andWhere { MenuItemsTable.storeId eq storeId }
+                .singleOrNull() ?: throw MenuItemNotFoundException()
+            val previousKaftUuid = row[MenuItemsTable.photoKaftUuid]
+
+            MenuItemsTable.update({ MenuItemsTable.id eq menuItemId }) {
+                it[photoKaftUuid] = kaftUuid
+                it[photoFilename] = filename
+            }
+
+            toResponse(menuItemId) to previousKaftUuid
+        }
+
+    // 写真を削除する。設定されていた場合は古いkaftUuidを返す（呼び出し側でkaftから削除する）。
+    fun clearPhoto(storeId: Long, menuItemId: Long): String? = transaction {
+        val row = MenuItemsTable.selectAll()
+            .andWhere { MenuItemsTable.id eq menuItemId }
+            .andWhere { MenuItemsTable.storeId eq storeId }
+            .singleOrNull() ?: throw MenuItemNotFoundException()
+        val previousKaftUuid = row[MenuItemsTable.photoKaftUuid]
+
+        MenuItemsTable.update({ MenuItemsTable.id eq menuItemId }) {
+            it[photoKaftUuid] = null
+            it[photoFilename] = null
+        }
+
+        previousKaftUuid
     }
 
     fun reorder(storeId: Long, orderedIds: List<Long>) = transaction {
@@ -86,5 +123,7 @@ class MenuItemRepository {
         price = this[MenuItemsTable.price],
         description = this[MenuItemsTable.description],
         displayOrder = this[MenuItemsTable.displayOrder],
+        photoKaftUuid = this[MenuItemsTable.photoKaftUuid],
+        photoFilename = this[MenuItemsTable.photoFilename],
     )
 }

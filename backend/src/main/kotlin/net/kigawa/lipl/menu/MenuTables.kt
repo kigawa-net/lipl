@@ -12,6 +12,8 @@ object MenuItemsTable : Table("menu_items") {
     val price = integer("price").nullable()
     val description = varchar("description", 200).nullable()
     val displayOrder = integer("display_order")
+    val photoKaftUuid = varchar("photo_kaft_uuid", 36).nullable()
+    val photoFilename = varchar("photo_filename", 255).nullable()
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)
     val updatedAt = timestamp("updated_at").defaultExpression(CurrentTimestamp)
 

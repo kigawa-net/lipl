@@ -81,15 +81,15 @@ fun Route.storeDeleteRoutes(
                 return@delete call.respond(HttpStatusCode.NotFound)
             }
 
-            val kaftUuids = photoRepository.deleteByStore(storeId)
-            kaftUuids.forEach { uuid ->
+            val photoKaftUuids = photoRepository.deleteByStore(storeId)
+            val menuItemKaftUuids = menuItemRepository.deleteByStore(storeId)
+            (photoKaftUuids + menuItemKaftUuids).forEach { uuid ->
                 try {
                     kaftClient.delete(uuid)
                 } catch (e: Exception) {
                     logger.warn("kaftの写真削除に失敗しました（uuid=$uuid）", e)
                 }
             }
-            menuItemRepository.deleteByStore(storeId)
             storeRepository.delete(storeId)
 
             call.respond(HttpStatusCode.NoContent)

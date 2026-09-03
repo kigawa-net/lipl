@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import {
   createMenuItem,
   deleteMenuItem,
+  deleteMenuItemPhoto,
   deletePhoto,
   getKaftBaseUrl,
   listMenuItems,
@@ -10,6 +11,7 @@ import {
   photoUrl,
   reorderMenuItems,
   reorderPhotos,
+  uploadMenuItemPhoto,
   uploadPhoto,
   type MenuItemResponse,
   type PhotoResponse,
@@ -37,6 +39,8 @@ export default function StoreDetail() {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [menuPhotoUploadingId, setMenuPhotoUploadingId] = useState<number | null>(null);
 
   const numericStoreId = Number(storeId);
 
@@ -166,6 +170,47 @@ export default function StoreDetail() {
     }
   }
 
+  async function handleMenuPhotoSelect(menuItemId: number, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setError(null);
+
+    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+      setError("JPEG・PNG・WebP形式の画像のみアップロードできます");
+      return;
+    }
+    if (file.size > MAX_PHOTO_SIZE) {
+      setError("画像サイズは10MB以下にしてください");
+      return;
+    }
+
+    setMenuPhotoUploadingId(menuItemId);
+    try {
+      const updated = await uploadMenuItemPhoto(numericStoreId, menuItemId, file);
+      setMenuItems((prev) => prev.map((item) => (item.id === menuItemId ? updated : item)));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setMenuPhotoUploadingId(null);
+    }
+  }
+
+  async function handleMenuPhotoRemove(menuItemId: number) {
+    setError(null);
+    try {
+      await deleteMenuItemPhoto(numericStoreId, menuItemId);
+      setMenuItems((prev) =>
+        prev.map((item) =>
+          item.id === menuItemId ? { ...item, photoKaftUuid: null, photoFilename: null } : item,
+        ),
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center">
@@ -249,20 +294,49 @@ export default function StoreDetail() {
         {menuItems.map((item, index) => (
           <li
             key={item.id}
-            className="flex items-center justify-between rounded border p-3 dark:border-stone-700"
+            className="flex items-center justify-between gap-3 rounded border p-3 dark:border-stone-700"
           >
-            <div>
-              <span className="font-semibold dark:text-stone-100">{item.name}</span>
-              {item.price != null && (
-                <span className="ml-2 text-sm text-gray-500 dark:text-stone-400">
-                  ¥{item.price.toLocaleString()}
-                </span>
+            <div className="flex min-w-0 items-center gap-3">
+              {item.photoKaftUuid && kaftBaseUrl ? (
+                <img
+                  src={photoUrl(kaftBaseUrl, { kaftUuid: item.photoKaftUuid, filename: item.photoFilename ?? "" })}
+                  alt={item.name}
+                  className="h-14 w-14 shrink-0 rounded object-cover dark:border dark:border-stone-700"
+                />
+              ) : (
+                <label className="flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center rounded border border-dashed text-[0.65rem] text-gray-400 transition-colors hover:border-amber-500 hover:text-amber-700 dark:border-stone-700 dark:text-stone-600 dark:hover:border-amber-600 dark:hover:text-amber-500">
+                  {menuPhotoUploadingId === item.id ? "..." : "写真"}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(e) => handleMenuPhotoSelect(item.id, e)}
+                    disabled={menuPhotoUploadingId === item.id}
+                    className="hidden"
+                  />
+                </label>
               )}
-              {item.description && (
-                <p className="text-sm text-gray-500 dark:text-stone-400">{item.description}</p>
-              )}
+              <div className="min-w-0">
+                <span className="font-semibold dark:text-stone-100">{item.name}</span>
+                {item.price != null && (
+                  <span className="ml-2 text-sm text-gray-500 dark:text-stone-400">
+                    ¥{item.price.toLocaleString()}
+                  </span>
+                )}
+                {item.description && (
+                  <p className="truncate text-sm text-gray-500 dark:text-stone-400">{item.description}</p>
+                )}
+                {item.photoKaftUuid && (
+                  <button
+                    type="button"
+                    onClick={() => handleMenuPhotoRemove(item.id)}
+                    className="text-xs text-red-600 underline hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                  >
+                    写真を削除
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
                 onClick={() => handleMove(index, -1)}
