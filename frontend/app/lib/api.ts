@@ -162,8 +162,7 @@ export interface MenuItemResponse {
   price: number | null;
   description: string | null;
   displayOrder: number;
-  photoKaftUuid: string | null;
-  photoFilename: string | null;
+  photoId: number | null;
 }
 
 async function menuItemErrorMessage(response: Response, fallback: string): Promise<string> {
@@ -214,55 +213,22 @@ export async function reorderMenuItems(storeId: number, orderedIds: number[]): P
   }
 }
 
-// アップロード本体（ファイルのバイト列）はブラウザからkaftへ直接PUTされ、
-// lipl backendは経由しない（店舗写真と同じアーキテクチャ上の制約）。
-export async function uploadMenuItemPhoto(
+// メニュー写真は独立アップロードではなく、店舗が既にアップロード済みのphotosから選択する
+// （photoId=nullで写真なしに戻せる）。
+export async function setMenuItemPhoto(
   storeId: number,
   menuItemId: number,
-  file: File,
+  photoId: number | null,
 ): Promise<MenuItemResponse> {
-  const tokenResponse = await authorizedFetch(
-    `/stores/${storeId}/menu-items/${menuItemId}/photo/upload-token`,
-    { method: "POST" },
-  );
-  if (!tokenResponse.ok) {
-    throw new Error(await menuItemErrorMessage(tokenResponse, "アップロード準備に失敗しました"));
-  }
-  const { uuid, uploadToken, kaftBaseUrl }: UploadTokenResponse = await tokenResponse.json();
-
-  const putResponse = await fetch(`${kaftBaseUrl}/files/${uuid}`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${uploadToken}`,
-      "Content-Type": file.type || "application/octet-stream",
-    },
-    body: file,
-  });
-  if (!putResponse.ok) {
-    throw new Error(`画像のアップロードに失敗しました（${putResponse.status}）`);
-  }
-
-  const confirmResponse = await authorizedFetch(
-    `/stores/${storeId}/menu-items/${menuItemId}/photo/confirm`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uuid, filename: file.name }),
-    },
-  );
-  if (!confirmResponse.ok) {
-    throw new Error(await menuItemErrorMessage(confirmResponse, "写真の登録に失敗しました"));
-  }
-  return confirmResponse.json();
-}
-
-export async function deleteMenuItemPhoto(storeId: number, menuItemId: number): Promise<void> {
   const response = await authorizedFetch(`/stores/${storeId}/menu-items/${menuItemId}/photo`, {
-    method: "DELETE",
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ photoId }),
   });
   if (!response.ok) {
-    throw new Error(await menuItemErrorMessage(response, "写真の削除に失敗しました"));
+    throw new Error(await menuItemErrorMessage(response, "写真の設定に失敗しました"));
   }
+  return response.json();
 }
 
 export interface PhotoResponse {

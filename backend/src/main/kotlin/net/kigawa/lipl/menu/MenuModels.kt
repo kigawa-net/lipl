@@ -21,8 +21,7 @@ data class MenuItemResponse(
     val price: Int?,
     val description: String?,
     val displayOrder: Int,
-    val photoKaftUuid: String?,
-    val photoFilename: String?,
+    val photoId: Long?,
 )
 
 @Serializable
@@ -31,14 +30,6 @@ data class ReorderMenuItemsRequest(
 )
 
 @Serializable
-data class MenuItemUploadTokenResponse(
-    val uuid: String,
-    val uploadToken: String,
-    val kaftBaseUrl: String,
-)
-
-@Serializable
-data class ConfirmMenuItemPhotoRequest(
-    val uuid: String,
-    val filename: String,
+data class SetMenuItemPhotoRequest(
+    val photoId: Long?,
 )
