@@ -113,6 +113,27 @@ export async function createStore(request: CreateStoreRequest): Promise<StoreRes
   return response.json();
 }
 
+export async function getStore(storeId: number): Promise<StoreResponse> {
+  const response = await authorizedFetch(`/stores/${storeId}`);
+  if (!response.ok) {
+    throw new Error(`店舗情報の取得に失敗しました（${response.status}）`);
+  }
+  return response.json();
+}
+
+export async function updateStore(storeId: number, request: CreateStoreRequest): Promise<StoreResponse> {
+  const response = await authorizedFetch(`/stores/${storeId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(body?.error ?? `店舗情報の更新に失敗しました（${response.status}）`);
+  }
+  return response.json();
+}
+
 export async function setStorePublished(storeId: number, published: boolean): Promise<StoreResponse> {
   const response = await authorizedFetch(`/stores/${storeId}/publish`, {
     method: "PUT",
