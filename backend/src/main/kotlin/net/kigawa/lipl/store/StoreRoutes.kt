@@ -82,8 +82,8 @@ fun Route.storeDeleteRoutes(
             }
 
             val photoKaftUuids = photoRepository.deleteByStore(storeId)
-            val menuItemKaftUuids = menuItemRepository.deleteByStore(storeId)
-            (photoKaftUuids + menuItemKaftUuids).forEach { uuid ->
+            menuItemRepository.deleteByStore(storeId)
+            photoKaftUuids.forEach { uuid ->
                 try {
                     kaftClient.delete(uuid)
                 } catch (e: Exception) {

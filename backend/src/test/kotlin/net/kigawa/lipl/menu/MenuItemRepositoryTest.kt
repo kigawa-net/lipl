@@ -1,5 +1,6 @@
 package net.kigawa.lipl.menu
 
+import net.kigawa.lipl.photo.PhotosTable
 import net.kigawa.lipl.store.BusinessCategory
 import net.kigawa.lipl.store.CreateStoreRequest
 import net.kigawa.lipl.store.StoreRepository
@@ -7,6 +8,7 @@ import net.kigawa.lipl.store.StoreSnsLinksTable
 import net.kigawa.lipl.store.StoresTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -27,7 +29,7 @@ class MenuItemRepositoryTest {
             driver = "org.h2.Driver",
         )
         transaction {
-            SchemaUtils.create(StoresTable, StoreSnsLinksTable, MenuItemsTable)
+            SchemaUtils.create(StoresTable, StoreSnsLinksTable, PhotosTable, MenuItemsTable)
         }
         storeId = storeRepository.create(
             "owner-1",
@@ -38,8 +40,17 @@ class MenuItemRepositoryTest {
     @AfterTest
     fun tearDown() {
         transaction {
-            SchemaUtils.drop(MenuItemsTable, StoreSnsLinksTable, StoresTable)
+            SchemaUtils.drop(MenuItemsTable, PhotosTable, StoreSnsLinksTable, StoresTable)
         }
+    }
+
+    private fun createPhoto(storeId: Long, order: Int = 0): Long = transaction {
+        PhotosTable.insert {
+            it[PhotosTable.storeId] = storeId
+            it[kaftUuid] = "uuid-photo-$order-${System.nanoTime()}"
+            it[filename] = "photo-$order.jpg"
+            it[displayOrder] = order
+        } get PhotosTable.id
     }
 
     @Test
@@ -100,66 +111,56 @@ class MenuItemRepositoryTest {
     }
 
     @Test
-    fun `delete returns the photo kaftUuid when set, or null when not set`() {
-        val withPhoto = menuItemRepository.create(storeId, CreateMenuItemRequest(name = "カレー"))
-        menuItemRepository.setPhoto(storeId, withPhoto.id, "uuid-1", "a.jpg")
-        val withoutPhoto = menuItemRepository.create(storeId, CreateMenuItemRequest(name = "ラーメン"))
-
-        assertEquals("uuid-1", menuItemRepository.delete(storeId, withPhoto.id))
-        assertEquals(null, menuItemRepository.delete(storeId, withoutPhoto.id))
-    }
-
-    @Test
-    fun `setPhoto sets photo fields and returns null when no previous photo`() {
+    fun `setPhoto sets photoId when it belongs to the same store`() {
         val item = menuItemRepository.create(storeId, CreateMenuItemRequest(name = "カレー"))
+        val photoId = createPhoto(storeId)
 
-        val (updated, previous) = menuItemRepository.setPhoto(storeId, item.id, "uuid-1", "a.jpg")
+        val updated = menuItemRepository.setPhoto(storeId, item.id, photoId)
 
-        assertEquals("uuid-1", updated.photoKaftUuid)
-        assertEquals("a.jpg", updated.photoFilename)
-        assertEquals(null, previous)
+        assertEquals(photoId, updated.photoId)
     }
 
     @Test
-    fun `setPhoto returns the previous kaftUuid when replacing an existing photo`() {
+    fun `setPhoto with null clears the photo`() {
         val item = menuItemRepository.create(storeId, CreateMenuItemRequest(name = "カレー"))
-        menuItemRepository.setPhoto(storeId, item.id, "uuid-1", "a.jpg")
+        val photoId = createPhoto(storeId)
+        menuItemRepository.setPhoto(storeId, item.id, photoId)
 
-        val (updated, previous) = menuItemRepository.setPhoto(storeId, item.id, "uuid-2", "b.jpg")
+        val updated = menuItemRepository.setPhoto(storeId, item.id, null)
 
-        assertEquals("uuid-2", updated.photoKaftUuid)
-        assertEquals("uuid-1", previous)
+        assertEquals(null, updated.photoId)
     }
 
     @Test
-    fun `clearPhoto removes photo fields and returns the previous kaftUuid`() {
+    fun `setPhoto rejects a photoId belonging to another store`() {
         val item = menuItemRepository.create(storeId, CreateMenuItemRequest(name = "カレー"))
-        menuItemRepository.setPhoto(storeId, item.id, "uuid-1", "a.jpg")
+        val otherStoreId = storeRepository.create(
+            "owner-2",
+            CreateStoreRequest(name = "他店舗", businessCategory = BusinessCategory.CAFE, address = "住所2"),
+        ).id
+        val otherPhotoId = createPhoto(otherStoreId)
 
-        val previous = menuItemRepository.clearPhoto(storeId, item.id)
-
-        assertEquals("uuid-1", previous)
-        val items = menuItemRepository.listByStore(storeId)
-        assertEquals(null, items.single().photoKaftUuid)
-        assertEquals(null, items.single().photoFilename)
+        assertFailsWith<PhotoNotFoundException> {
+            menuItemRepository.setPhoto(storeId, item.id, otherPhotoId)
+        }
     }
 
     @Test
-    fun `clearPhoto returns null when no photo was set`() {
-        val item = menuItemRepository.create(storeId, CreateMenuItemRequest(name = "カレー"))
+    fun `setPhoto of nonexistent item throws`() {
+        val photoId = createPhoto(storeId)
 
-        assertEquals(null, menuItemRepository.clearPhoto(storeId, item.id))
+        assertFailsWith<MenuItemNotFoundException> {
+            menuItemRepository.setPhoto(storeId, 9999, photoId)
+        }
     }
 
     @Test
-    fun `deleteByStore returns kaftUuids of items that had a photo`() {
-        val a = menuItemRepository.create(storeId, CreateMenuItemRequest(name = "A"))
+    fun `deleteByStore removes all items for the store`() {
+        menuItemRepository.create(storeId, CreateMenuItemRequest(name = "A"))
         menuItemRepository.create(storeId, CreateMenuItemRequest(name = "B"))
-        menuItemRepository.setPhoto(storeId, a.id, "uuid-1", "a.jpg")
 
-        val kaftUuids = menuItemRepository.deleteByStore(storeId)
+        menuItemRepository.deleteByStore(storeId)
 
-        assertEquals(listOf("uuid-1"), kaftUuids)
         assertEquals(emptyList(), menuItemRepository.listByStore(storeId))
     }
 }

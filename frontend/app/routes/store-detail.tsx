@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router";
 import {
   createMenuItem,
   deleteMenuItem,
-  deleteMenuItemPhoto,
   deletePhoto,
   getKaftBaseUrl,
   listMenuItems,
@@ -11,7 +10,7 @@ import {
   photoUrl,
   reorderMenuItems,
   reorderPhotos,
-  uploadMenuItemPhoto,
+  setMenuItemPhoto,
   uploadPhoto,
   type MenuItemResponse,
   type PhotoResponse,
@@ -40,7 +39,8 @@ export default function StoreDetail() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [menuPhotoUploadingId, setMenuPhotoUploadingId] = useState<number | null>(null);
+  const [menuPhotoSavingId, setMenuPhotoSavingId] = useState<number | null>(null);
+  const [menuPhotoPickerId, setMenuPhotoPickerId] = useState<number | null>(null);
 
   const numericStoreId = Number(storeId);
 
@@ -170,44 +170,17 @@ export default function StoreDetail() {
     }
   }
 
-  async function handleMenuPhotoSelect(menuItemId: number, e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-
+  async function handleMenuPhotoPick(menuItemId: number, photoId: number | null) {
     setError(null);
-
-    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
-      setError("JPEG・PNG・WebP形式の画像のみアップロードできます");
-      return;
-    }
-    if (file.size > MAX_PHOTO_SIZE) {
-      setError("画像サイズは10MB以下にしてください");
-      return;
-    }
-
-    setMenuPhotoUploadingId(menuItemId);
+    setMenuPhotoSavingId(menuItemId);
     try {
-      const updated = await uploadMenuItemPhoto(numericStoreId, menuItemId, file);
+      const updated = await setMenuItemPhoto(numericStoreId, menuItemId, photoId);
       setMenuItems((prev) => prev.map((item) => (item.id === menuItemId ? updated : item)));
+      setMenuPhotoPickerId(null);
     } catch (e) {
       setError((e as Error).message);
     } finally {
-      setMenuPhotoUploadingId(null);
-    }
-  }
-
-  async function handleMenuPhotoRemove(menuItemId: number) {
-    setError(null);
-    try {
-      await deleteMenuItemPhoto(numericStoreId, menuItemId);
-      setMenuItems((prev) =>
-        prev.map((item) =>
-          item.id === menuItemId ? { ...item, photoKaftUuid: null, photoFilename: null } : item,
-        ),
-      );
-    } catch (e) {
-      setError((e as Error).message);
+      setMenuPhotoSavingId(null);
     }
   }
 
@@ -291,78 +264,100 @@ export default function StoreDetail() {
       {error && <p className="mb-4 text-red-600 dark:text-red-400">{error}</p>}
 
       <ul className="mb-8 space-y-2">
-        {menuItems.map((item, index) => (
-          <li
-            key={item.id}
-            className="flex items-center justify-between gap-3 rounded border p-3 dark:border-stone-700"
-          >
-            <div className="flex min-w-0 items-center gap-3">
-              {item.photoKaftUuid && kaftBaseUrl ? (
-                <img
-                  src={photoUrl(kaftBaseUrl, { kaftUuid: item.photoKaftUuid, filename: item.photoFilename ?? "" })}
-                  alt={item.name}
-                  className="h-14 w-14 shrink-0 rounded object-cover dark:border dark:border-stone-700"
-                />
-              ) : (
-                <label className="flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center rounded border border-dashed text-[0.65rem] text-gray-400 transition-colors hover:border-amber-500 hover:text-amber-700 dark:border-stone-700 dark:text-stone-600 dark:hover:border-amber-600 dark:hover:text-amber-500">
-                  {menuPhotoUploadingId === item.id ? "..." : "写真"}
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(e) => handleMenuPhotoSelect(item.id, e)}
-                    disabled={menuPhotoUploadingId === item.id}
-                    className="hidden"
-                  />
-                </label>
-              )}
-              <div className="min-w-0">
-                <span className="font-semibold dark:text-stone-100">{item.name}</span>
-                {item.price != null && (
-                  <span className="ml-2 text-sm text-gray-500 dark:text-stone-400">
-                    ¥{item.price.toLocaleString()}
-                  </span>
-                )}
-                {item.description && (
-                  <p className="truncate text-sm text-gray-500 dark:text-stone-400">{item.description}</p>
-                )}
-                {item.photoKaftUuid && (
+        {menuItems.map((item, index) => {
+          const itemPhoto = photos.find((photo) => photo.id === item.photoId);
+          const pickerOpen = menuPhotoPickerId === item.id;
+          return (
+            <li key={item.id} className="rounded border p-3 dark:border-stone-700">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => handleMenuPhotoRemove(item.id)}
-                    className="text-xs text-red-600 underline hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                    onClick={() => setMenuPhotoPickerId(pickerOpen ? null : item.id)}
+                    disabled={photos.length === 0 || menuPhotoSavingId === item.id}
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded border border-dashed text-[0.65rem] text-gray-400 transition-colors hover:border-amber-500 hover:text-amber-700 disabled:opacity-50 dark:border-stone-700 dark:text-stone-600 dark:hover:border-amber-600 dark:hover:text-amber-500"
                   >
-                    写真を削除
+                    {itemPhoto && kaftBaseUrl ? (
+                      <img
+                        src={photoUrl(kaftBaseUrl, itemPhoto)}
+                        alt={item.name}
+                        className="h-full w-full rounded object-cover"
+                      />
+                    ) : menuPhotoSavingId === item.id ? (
+                      "..."
+                    ) : (
+                      "写真"
+                    )}
                   </button>
-                )}
+                  <div className="min-w-0">
+                    <span className="font-semibold dark:text-stone-100">{item.name}</span>
+                    {item.price != null && (
+                      <span className="ml-2 text-sm text-gray-500 dark:text-stone-400">
+                        ¥{item.price.toLocaleString()}
+                      </span>
+                    )}
+                    {item.description && (
+                      <p className="truncate text-sm text-gray-500 dark:text-stone-400">{item.description}</p>
+                    )}
+                    {photos.length === 0 && (
+                      <p className="text-xs text-gray-400 dark:text-stone-500">写真をアップロードすると選択できます</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleMove(index, -1)}
+                    disabled={index === 0}
+                    className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMove(index, 1)}
+                    disabled={index === menuItems.length - 1}
+                    className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(item.id)}
+                    className="rounded border px-2 py-1 text-sm text-red-600 dark:border-stone-700 dark:text-red-400"
+                  >
+                    削除
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleMove(index, -1)}
-                disabled={index === 0}
-                className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                onClick={() => handleMove(index, 1)}
-                disabled={index === menuItems.length - 1}
-                className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
-              >
-                ↓
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(item.id)}
-                className="rounded border px-2 py-1 text-sm text-red-600 dark:border-stone-700 dark:text-red-400"
-              >
-                削除
-              </button>
-            </div>
-          </li>
-        ))}
+              {pickerOpen && kaftBaseUrl && (
+                <div className="mt-3 flex flex-wrap gap-2 border-t pt-3 dark:border-stone-700">
+                  <button
+                    type="button"
+                    onClick={() => handleMenuPhotoPick(item.id, null)}
+                    className="flex h-14 w-14 items-center justify-center rounded border border-dashed text-[0.6rem] text-gray-400 transition-colors hover:border-amber-500 hover:text-amber-700 dark:border-stone-700 dark:text-stone-600 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                  >
+                    写真なし
+                  </button>
+                  {photos.map((photo) => (
+                    <button
+                      key={photo.id}
+                      type="button"
+                      onClick={() => handleMenuPhotoPick(item.id, photo.id)}
+                      className={`h-14 w-14 shrink-0 overflow-hidden rounded border-2 transition-colors ${
+                        item.photoId === photo.id
+                          ? "border-amber-700 dark:border-amber-500"
+                          : "border-transparent hover:border-amber-300 dark:hover:border-amber-700"
+                      }`}
+                    >
+                      <img src={photoUrl(kaftBaseUrl, photo)} alt={photo.filename} className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </li>
+          );
+        })}
         {menuItems.length === 0 && (
           <li className="text-gray-500 dark:text-stone-500">まだメニューがありません</li>
         )}

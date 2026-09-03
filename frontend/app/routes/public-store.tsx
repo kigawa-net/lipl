@@ -106,17 +106,16 @@ export default function PublicStore() {
           <div className="mt-10">
             <h2 className="mb-4 text-lg font-bold text-gray-900 dark:text-stone-100">メニュー</h2>
             <ul className="space-y-3">
-              {store.menuItems.map((item) => (
+              {store.menuItems.map((item) => {
+                const itemPhoto = store.photos.find((photo) => photo.id === item.photoId);
+                return (
                 <li
                   key={item.id}
                   className="flex gap-4 rounded-lg border border-amber-100 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
                 >
-                  {item.photoKaftUuid && (
+                  {itemPhoto && (
                     <img
-                      src={photoUrl(store.kaftBaseUrl, {
-                        kaftUuid: item.photoKaftUuid,
-                        filename: item.photoFilename ?? "",
-                      })}
+                      src={photoUrl(store.kaftBaseUrl, itemPhoto)}
                       alt={item.name}
                       className="h-16 w-16 shrink-0 rounded object-cover"
                     />
@@ -135,7 +134,8 @@ export default function PublicStore() {
                     )}
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </div>
         )}
