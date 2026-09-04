@@ -5,17 +5,41 @@ import {
   deleteMenuItem,
   deletePhoto,
   getKaftBaseUrl,
+  getStore,
   listMenuItems,
   listPhotos,
   photoUrl,
   reorderMenuItems,
   reorderPhotos,
   setMenuItemPhoto,
+  updateStore,
   uploadPhoto,
+  type BusinessCategory,
   type MenuItemResponse,
+  type OperationType,
   type PhotoResponse,
+  type SnsPlatform,
 } from "~/lib/api";
+import {
+  BUSINESS_CATEGORY_LABELS,
+  defaultOperationType,
+  OPERATION_TYPE_LABELS,
+  SNS_PLATFORM_LABELS,
+  SNS_PLATFORMS,
+} from "~/lib/labels";
 import { isAuthenticated } from "~/lib/oidc";
+
+function ChevronIcon() {
+  return (
+    <svg className="field-select-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
 
 const PHOTO_LIMIT = 15;
 const MAX_PHOTO_SIZE = 10 * 1024 * 1024;
@@ -33,6 +57,26 @@ export default function StoreDetail() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
 
+  const [storeName, setStoreName] = useState("");
+  const [businessCategory, setBusinessCategory] = useState<BusinessCategory>("CAFE");
+  const [operationType, setOperationType] = useState<OperationType>("FIXED");
+  const [address, setAddress] = useState("");
+  const [businessArea, setBusinessArea] = useState("");
+  const [businessHours, setBusinessHours] = useState("");
+  const [phone, setPhone] = useState("");
+  const [snsUrls, setSnsUrls] = useState<Record<SnsPlatform, string>>({
+    INSTAGRAM: "",
+    X: "",
+    FACEBOOK: "",
+    LINE: "",
+    TIKTOK: "",
+    YOUTUBE: "",
+  });
+  const [storeLoading, setStoreLoading] = useState(true);
+  const [storeError, setStoreError] = useState<string | null>(null);
+  const [storeSaving, setStoreSaving] = useState(false);
+  const [storeSaved, setStoreSaved] = useState(false);
+
   const [photos, setPhotos] = useState<PhotoResponse[]>([]);
   const [kaftBaseUrl, setKaftBaseUrl] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -49,6 +93,26 @@ export default function StoreDetail() {
       navigate("/login", { replace: true });
       return;
     }
+    getStore(numericStoreId)
+      .then((s) => {
+        setStoreName(s.name);
+        setBusinessCategory(s.businessCategory);
+        setOperationType(s.operationType);
+        setAddress(s.address ?? "");
+        setBusinessArea(s.businessArea ?? "");
+        setBusinessHours(s.businessHours ?? "");
+        setPhone(s.phone ?? "");
+        setSnsUrls((prev) => {
+          const next = { ...prev };
+          s.snsLinks.forEach((link) => {
+            next[link.platform] = link.url;
+          });
+          return next;
+        });
+      })
+      .catch((e: Error) => setStoreError(e.message))
+      .finally(() => setStoreLoading(false));
+
     listMenuItems(numericStoreId)
       .then(setMenuItems)
       .catch((e: Error) => setError(e.message))
@@ -61,6 +125,38 @@ export default function StoreDetail() {
       })
       .catch((e: Error) => setPhotoError(e.message));
   }, [numericStoreId, navigate]);
+
+  function handleCategoryChange(category: BusinessCategory) {
+    setBusinessCategory(category);
+    setOperationType(defaultOperationType(category));
+  }
+
+  async function handleStoreSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setStoreSaving(true);
+    setStoreError(null);
+    setStoreSaved(false);
+    try {
+      await updateStore(numericStoreId, {
+        name: storeName,
+        businessCategory,
+        operationType,
+        address: operationType === "FIXED" ? address : undefined,
+        businessArea: operationType === "MOBILE" ? businessArea : undefined,
+        businessHours: businessHours || undefined,
+        phone: phone || undefined,
+        snsLinks: SNS_PLATFORMS.filter((platform) => snsUrls[platform].trim() !== "").map((platform) => ({
+          platform,
+          url: snsUrls[platform],
+        })),
+      });
+      setStoreSaved(true);
+    } catch (e) {
+      setStoreError((e as Error).message);
+    } finally {
+      setStoreSaving(false);
+    }
+  }
 
   async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -184,7 +280,7 @@ export default function StoreDetail() {
     }
   }
 
-  if (loading) {
+  if (loading || storeLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <p className="dark:text-stone-300">読み込み中...</p>
@@ -200,6 +296,165 @@ export default function StoreDetail() {
           店舗一覧に戻る
         </a>
       </div>
+
+      <h2 className="mb-4 text-xl font-bold dark:text-stone-100">店舗情報</h2>
+      <form onSubmit={handleStoreSubmit} className="form-card mb-8">
+        <div className="form-section">
+          <div className="space-y-5">
+            <div className="field">
+              <label className="field-label">
+                <span>店名</span>
+                <span className="flex items-center gap-2">
+                  <span className="field-tag-required">必須</span>
+                  <span className="field-count">{storeName.length}/50</span>
+                </span>
+              </label>
+              <input
+                required
+                maxLength={50}
+                value={storeName}
+                onChange={(e) => setStoreName(e.target.value)}
+                placeholder="例: 喫茶ひだまり"
+                className="field-input"
+              />
+            </div>
+
+            <div className="field">
+              <label className="field-label">業種</label>
+              <div className="field-select-wrap">
+                <select
+                  value={businessCategory}
+                  onChange={(e) => handleCategoryChange(e.target.value as BusinessCategory)}
+                  className="field-select"
+                >
+                  {Object.entries(BUSINESS_CATEGORY_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronIcon />
+              </div>
+            </div>
+
+            <div className="field">
+              <label className="field-label">業態区分</label>
+              <div className="field-select-wrap">
+                <select
+                  value={operationType}
+                  onChange={(e) => setOperationType(e.target.value as OperationType)}
+                  className="field-select"
+                >
+                  {Object.entries(OPERATION_TYPE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronIcon />
+              </div>
+            </div>
+
+            {operationType === "FIXED" ? (
+              <div className="field">
+                <label className="field-label">
+                  <span>所在地（住所）</span>
+                  <span className="flex items-center gap-2">
+                    <span className="field-tag-required">必須</span>
+                    <span className="field-count">{address.length}/200</span>
+                  </span>
+                </label>
+                <input
+                  required
+                  maxLength={200}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="例: 東京都渋谷区〇〇1-2-3"
+                  className="field-input"
+                />
+              </div>
+            ) : (
+              <div className="field">
+                <label className="field-label">
+                  <span>出店エリア</span>
+                  <span className="flex items-center gap-2">
+                    <span className="field-tag-required">必須</span>
+                    <span className="field-count">{businessArea.length}/200</span>
+                  </span>
+                </label>
+                <input
+                  required
+                  maxLength={200}
+                  value={businessArea}
+                  onChange={(e) => setBusinessArea(e.target.value)}
+                  placeholder="例: 都内近郊のマルシェ・イベント中心"
+                  className="field-input"
+                />
+              </div>
+            )}
+
+            <div className="field">
+              <label className="field-label">
+                <span>営業時間</span>
+                <span className="field-tag">任意</span>
+              </label>
+              <input
+                maxLength={200}
+                value={businessHours}
+                onChange={(e) => setBusinessHours(e.target.value)}
+                placeholder="例: 平日11:00-22:00 / 土日祝10:00-22:00"
+                className="field-input"
+              />
+            </div>
+
+            <div className="field">
+              <label className="field-label">
+                <span>電話番号</span>
+                <span className="field-tag">任意</span>
+              </label>
+              <input
+                maxLength={20}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="例: 03-1234-5678"
+                className="field-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <p className="form-section-title">SNSリンク</p>
+          <div className="space-y-2">
+            {SNS_PLATFORMS.map((platform) => (
+              <label key={platform} className="sns-row">
+                <span className="sns-badge">{SNS_PLATFORM_LABELS[platform]}</span>
+                <input
+                  type="url"
+                  maxLength={500}
+                  value={snsUrls[platform]}
+                  onChange={(e) => setSnsUrls((prev) => ({ ...prev, [platform]: e.target.value }))}
+                  placeholder="https://..."
+                  className="sns-input"
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {storeError && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{storeError}</p>}
+        {storeSaved && !storeError && (
+          <p className="mt-4 text-sm text-amber-800 dark:text-amber-500">保存しました</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={storeSaving}
+          className="mt-6 w-full rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 sm:w-auto sm:px-6 dark:bg-amber-700 dark:hover:bg-amber-600"
+        >
+          {storeSaving ? "保存中..." : "店舗情報を保存"}
+        </button>
+      </form>
 
       <h2 className="mb-4 text-xl font-bold dark:text-stone-100">写真</h2>
       {photoError && <p className="mb-4 text-red-600 dark:text-red-400">{photoError}</p>}

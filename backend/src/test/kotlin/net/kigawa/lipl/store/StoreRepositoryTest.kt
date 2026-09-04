@@ -145,6 +145,59 @@ class StoreRepositoryTest {
     }
 
     @Test
+    fun `update overwrites fields and replaces sns links`() {
+        val created = repository.create(
+            "owner-1",
+            CreateStoreRequest(
+                name = "店舗",
+                businessCategory = BusinessCategory.CAFE,
+                address = "住所",
+                snsLinks = listOf(SnsLinkInput(SnsPlatform.INSTAGRAM, "https://instagram.com/old")),
+            ),
+        )
+
+        val updated = repository.update(
+            created.id,
+            CreateStoreRequest(
+                name = "新店舗名",
+                businessCategory = BusinessCategory.RAMEN,
+                address = "新住所",
+                businessHours = "11:00-22:00",
+                phone = "03-1234-5678",
+                snsLinks = listOf(SnsLinkInput(SnsPlatform.X, "https://x.com/new")),
+            ),
+        )
+
+        assertEquals("新店舗名", updated.name)
+        assertEquals(BusinessCategory.RAMEN, updated.businessCategory)
+        assertEquals("新住所", updated.address)
+        assertEquals("11:00-22:00", updated.businessHours)
+        assertEquals("03-1234-5678", updated.phone)
+        assertEquals(listOf(SnsLinkInput(SnsPlatform.X, "https://x.com/new")), updated.snsLinks)
+        assertEquals(created.slug, updated.slug)
+    }
+
+    @Test
+    fun `update on unknown store throws`() {
+        assertFailsWith<StoreNotFoundException> {
+            repository.update(
+                999L,
+                CreateStoreRequest(name = "店舗", businessCategory = BusinessCategory.CAFE, address = "住所"),
+            )
+        }
+    }
+
+    @Test
+    fun `get returns the current state of the store`() {
+        val created = repository.create(
+            "owner-1",
+            CreateStoreRequest(name = "店舗", businessCategory = BusinessCategory.CAFE, address = "住所"),
+        )
+
+        assertEquals(created, repository.get(created.id))
+    }
+
+    @Test
     fun `delete removes the store and its sns links`() {
         val request = CreateStoreRequest(
             name = "店舗",

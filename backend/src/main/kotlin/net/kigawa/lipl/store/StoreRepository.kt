@@ -61,6 +61,34 @@ class StoreRepository {
             .any()
     }
 
+    fun get(storeId: Long): StoreResponse = transaction { toResponse(storeId) }
+
+    fun update(storeId: Long, request: CreateStoreRequest): StoreResponse = transaction {
+        val operationType = request.operationType ?: defaultOperationTypeFor(request.businessCategory)
+
+        val updated = StoresTable.update({ StoresTable.id eq storeId }) {
+            it[name] = request.name
+            it[businessCategory] = request.businessCategory.name
+            it[StoresTable.operationType] = operationType.name
+            it[address] = request.address
+            it[businessArea] = request.businessArea
+            it[businessHours] = request.businessHours
+            it[phone] = request.phone
+        }
+        if (updated == 0) throw StoreNotFoundException()
+
+        StoreSnsLinksTable.deleteWhere { StoreSnsLinksTable.storeId eq storeId }
+        request.snsLinks.forEach { link ->
+            StoreSnsLinksTable.insert {
+                it[StoreSnsLinksTable.storeId] = storeId
+                it[StoreSnsLinksTable.platform] = link.platform.name
+                it[StoreSnsLinksTable.url] = link.url
+            }
+        }
+
+        toResponse(storeId)
+    }
+
     fun setPublished(storeId: Long, published: Boolean): StoreResponse = transaction {
         val updated = StoresTable.update({ StoresTable.id eq storeId }) {
             it[StoresTable.published] = published

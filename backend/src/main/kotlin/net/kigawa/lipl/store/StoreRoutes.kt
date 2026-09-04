@@ -45,6 +45,39 @@ fun Route.storeRoutes(repository: StoreRepository) {
                 call.respond(repository.listByOwner(principal.ownerSub))
             }
 
+            get("/{storeId}") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: return@get call.respond(HttpStatusCode.Unauthorized)
+                val storeId = call.parameters["storeId"]?.toLongOrNull()
+                    ?: return@get call.respond(HttpStatusCode.BadRequest)
+
+                if (!repository.isOwnedBy(storeId, principal.ownerSub)) {
+                    return@get call.respond(HttpStatusCode.NotFound)
+                }
+                call.respond(repository.get(storeId))
+            }
+
+            put("/{storeId}") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: return@put call.respond(HttpStatusCode.Unauthorized)
+                val storeId = call.parameters["storeId"]?.toLongOrNull()
+                    ?: return@put call.respond(HttpStatusCode.BadRequest)
+
+                if (!repository.isOwnedBy(storeId, principal.ownerSub)) {
+                    return@put call.respond(HttpStatusCode.NotFound)
+                }
+
+                val request = call.receive<CreateStoreRequest>()
+                try {
+                    request.validate()
+                } catch (e: StoreValidationException) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
+                    return@put
+                }
+
+                call.respond(repository.update(storeId, request))
+            }
+
             put("/{storeId}/publish") {
                 val principal = call.principal<JWTPrincipal>()
                     ?: return@put call.respond(HttpStatusCode.Unauthorized)
