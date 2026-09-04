@@ -335,6 +335,21 @@ export default function StoreDetail() {
         </a>
       </div>
 
+      <div className="mb-8 flex gap-3">
+        <a
+          href={`/stores/${storeId}/interview`}
+          className="rounded-lg border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-50 dark:border-stone-700 dark:bg-stone-900 dark:text-amber-500 dark:hover:bg-stone-800"
+        >
+          AIヒアリング
+        </a>
+        <a
+          href={`/stores/${storeId}/lp`}
+          className="rounded-lg border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-50 dark:border-stone-700 dark:bg-stone-900 dark:text-amber-500 dark:hover:bg-stone-800"
+        >
+          LP編集
+        </a>
+      </div>
+
       <h2 className="mb-4 text-xl font-bold dark:text-stone-100">店舗情報</h2>
       <form onSubmit={handleStoreSubmit} className="form-card mb-8">
         <div className="form-section">

@@ -55,6 +55,7 @@ export interface PublicStoreResponse {
   snsLinks: SnsLinkInput[];
   menuItems: MenuItemResponse[];
   photos: PhotoResponse[];
+  lpContent: LpContentResponse | null;
   kaftBaseUrl: string;
 }
 
@@ -366,4 +367,84 @@ export async function reorderPhotos(storeId: number, orderedIds: number[]): Prom
   if (!response.ok) {
     throw new Error(await photoErrorMessage(response, "写真の並び替えに失敗しました"));
   }
+}
+
+export interface InterviewMessageResponse {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface InterviewStateResponse {
+  messages: InterviewMessageResponse[];
+  questionCount: number;
+  questionLimit: number;
+  limitReached: boolean;
+}
+
+async function aiErrorMessage(response: Response, fallback: string): Promise<string> {
+  const body = (await response.json().catch(() => null)) as { error?: string } | null;
+  return body?.error ?? `${fallback}（${response.status}）`;
+}
+
+export async function getInterviewState(storeId: number): Promise<InterviewStateResponse> {
+  const response = await authorizedFetch(`/stores/${storeId}/interview`);
+  if (!response.ok) {
+    throw new Error(await aiErrorMessage(response, "AIヒアリング状態の取得に失敗しました"));
+  }
+  return response.json();
+}
+
+export async function sendInterviewMessage(
+  storeId: number,
+  message?: string,
+): Promise<InterviewStateResponse> {
+  const response = await authorizedFetch(`/stores/${storeId}/interview/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+  if (!response.ok) {
+    throw new Error(await aiErrorMessage(response, "メッセージの送信に失敗しました"));
+  }
+  return response.json();
+}
+
+export interface LpContentResponse {
+  catchphrase: string;
+  description: string;
+}
+
+export async function getLpContent(storeId: number): Promise<LpContentResponse | null> {
+  const response = await authorizedFetch(`/stores/${storeId}/lp`);
+  if (response.status === 204) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(await aiErrorMessage(response, "LP情報の取得に失敗しました"));
+  }
+  return response.json();
+}
+
+export async function updateLpContent(
+  storeId: number,
+  request: LpContentResponse,
+): Promise<LpContentResponse> {
+  const response = await authorizedFetch(`/stores/${storeId}/lp`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await aiErrorMessage(response, "LPの更新に失敗しました"));
+  }
+  return response.json();
+}
+
+export async function generateLpContent(storeId: number): Promise<LpContentResponse> {
+  const response = await authorizedFetch(`/stores/${storeId}/lp/generate`, { method: "POST" });
+  if (!response.ok) {
+    throw new Error(await aiErrorMessage(response, "LPの生成に失敗しました"));
+  }
+  return response.json();
 }

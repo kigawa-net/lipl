@@ -11,6 +11,13 @@ import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.routing
+import net.kigawa.lipl.ai.AnthropicClaudeClient
+import net.kigawa.lipl.ai.ClaudeClient
+import net.kigawa.lipl.ai.InterviewRepository
+import net.kigawa.lipl.ai.LpRepository
+import net.kigawa.lipl.ai.claudeConfigFromEnv
+import net.kigawa.lipl.ai.interviewRoutes
+import net.kigawa.lipl.ai.lpRoutes
 import net.kigawa.lipl.auth.KeycloakConfig
 import net.kigawa.lipl.auth.configureKeycloakAuth
 import net.kigawa.lipl.auth.keycloakConfigFromEnv
@@ -45,6 +52,9 @@ fun main() {
     val keycloakConfig = keycloakConfigFromEnv()
     val kaftConfig = kaftConfigFromEnv()
     val kaftClient = KaftClient(kaftConfig)
+    val claudeClient: ClaudeClient = AnthropicClaudeClient(claudeConfigFromEnv())
+    val interviewRepository = InterviewRepository(claudeClient)
+    val lpRepository = LpRepository(claudeClient, interviewRepository)
 
     embeddedServer(Netty, port = port) {
         module(
@@ -54,6 +64,8 @@ fun main() {
             keycloakConfig = keycloakConfig,
             kaftClient = kaftClient,
             kaftConfig = kaftConfig,
+            interviewRepository = interviewRepository,
+            lpRepository = lpRepository,
         )
     }.start(wait = true)
 }
@@ -67,6 +79,8 @@ fun Application.module(
     keycloakConfig: KeycloakConfig? = null,
     kaftClient: KaftClient? = null,
     kaftConfig: KaftConfig? = null,
+    interviewRepository: InterviewRepository? = null,
+    lpRepository: LpRepository? = null,
 ) {
     install(ContentNegotiation) {
         json()
@@ -102,7 +116,13 @@ fun Application.module(
     }
     if (storeRepository != null && menuItemRepository != null && photoRepository != null && kaftConfig != null) {
         routing {
-            publicStoreRoutes(storeRepository, menuItemRepository, photoRepository, kaftConfig.publicBaseUrl)
+            publicStoreRoutes(storeRepository, menuItemRepository, photoRepository, lpRepository, kaftConfig.publicBaseUrl)
         }
+    }
+    if (storeRepository != null && interviewRepository != null) {
+        routing { interviewRoutes(storeRepository, interviewRepository) }
+    }
+    if (storeRepository != null && lpRepository != null) {
+        routing { lpRoutes(storeRepository, lpRepository) }
     }
 }
