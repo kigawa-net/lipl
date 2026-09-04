@@ -59,6 +59,33 @@ fun Route.menuItemRoutes(
                 }
             }
 
+            put("/{menuItemId}") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: return@put call.respond(HttpStatusCode.Unauthorized)
+                val storeId = call.parameters["storeId"]?.toLongOrNull()
+                    ?: return@put call.respond(HttpStatusCode.BadRequest)
+                val menuItemId = call.parameters["menuItemId"]?.toLongOrNull()
+                    ?: return@put call.respond(HttpStatusCode.BadRequest)
+
+                if (!storeRepository.isOwnedBy(storeId, principal.ownerSub)) {
+                    return@put call.respond(HttpStatusCode.NotFound)
+                }
+
+                val request = call.receive<CreateMenuItemRequest>()
+                try {
+                    request.validate()
+                } catch (e: MenuItemValidationException) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
+                    return@put
+                }
+
+                try {
+                    call.respond(menuItemRepository.update(storeId, menuItemId, request))
+                } catch (e: MenuItemNotFoundException) {
+                    call.respond(HttpStatusCode.NotFound)
+                }
+            }
+
             put("/reorder") {
                 val principal = call.principal<JWTPrincipal>()
                     ?: return@put call.respond(HttpStatusCode.Unauthorized)

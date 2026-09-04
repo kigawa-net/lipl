@@ -12,6 +12,7 @@ import {
   reorderMenuItems,
   reorderPhotos,
   setMenuItemPhoto,
+  updateMenuItem,
   updateStore,
   uploadPhoto,
   type BusinessCategory,
@@ -85,6 +86,12 @@ export default function StoreDetail() {
 
   const [menuPhotoSavingId, setMenuPhotoSavingId] = useState<number | null>(null);
   const [menuPhotoPickerId, setMenuPhotoPickerId] = useState<number | null>(null);
+
+  const [editingMenuItemId, setEditingMenuItemId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   const numericStoreId = Number(storeId);
 
@@ -263,6 +270,37 @@ export default function StoreDetail() {
       );
     } catch (e) {
       setError((e as Error).message);
+    }
+  }
+
+  function startEditMenuItem(item: MenuItemResponse) {
+    setEditingMenuItemId(item.id);
+    setEditName(item.name);
+    setEditPrice(item.price != null ? String(item.price) : "");
+    setEditDescription(item.description ?? "");
+    setError(null);
+  }
+
+  function cancelEditMenuItem() {
+    setEditingMenuItemId(null);
+  }
+
+  async function handleEditMenuItemSubmit(e: React.FormEvent, menuItemId: number) {
+    e.preventDefault();
+    setEditSaving(true);
+    setError(null);
+    try {
+      const updated = await updateMenuItem(numericStoreId, menuItemId, {
+        name: editName,
+        price: editPrice ? Number(editPrice) : undefined,
+        description: editDescription || undefined,
+      });
+      setMenuItems((prev) => prev.map((item) => (item.id === menuItemId ? updated : item)));
+      setEditingMenuItemId(null);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -522,10 +560,11 @@ export default function StoreDetail() {
         {menuItems.map((item, index) => {
           const itemPhoto = photos.find((photo) => photo.id === item.photoId);
           const pickerOpen = menuPhotoPickerId === item.id;
+          const editing = editingMenuItemId === item.id;
           return (
             <li key={item.id} className="rounded border p-3 dark:border-stone-700">
               <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setMenuPhotoPickerId(pickerOpen ? null : item.id)}
@@ -544,46 +583,110 @@ export default function StoreDetail() {
                       "写真"
                     )}
                   </button>
-                  <div className="min-w-0">
-                    <span className="font-semibold dark:text-stone-100">{item.name}</span>
-                    {item.price != null && (
-                      <span className="ml-2 text-sm text-gray-500 dark:text-stone-400">
-                        ¥{item.price.toLocaleString()}
-                      </span>
-                    )}
-                    {item.description && (
-                      <p className="truncate text-sm text-gray-500 dark:text-stone-400">{item.description}</p>
-                    )}
-                    {photos.length === 0 && (
-                      <p className="text-xs text-gray-400 dark:text-stone-500">写真をアップロードすると選択できます</p>
-                    )}
+                  {editing ? (
+                    <form
+                      onSubmit={(e) => handleEditMenuItemSubmit(e, item.id)}
+                      className="min-w-0 flex-1 space-y-2"
+                    >
+                      <input
+                        required
+                        maxLength={50}
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        placeholder="品名"
+                        className="field-input"
+                        autoFocus
+                      />
+                      <div className="relative">
+                        <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-sm text-gray-400 dark:text-stone-500">
+                          ¥
+                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={editPrice}
+                          onChange={(e) => setEditPrice(e.target.value)}
+                          placeholder="0"
+                          className="field-input pl-7"
+                        />
+                      </div>
+                      <textarea
+                        rows={2}
+                        maxLength={200}
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        placeholder="説明文"
+                        className="field-textarea field-input"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="submit"
+                          disabled={editSaving}
+                          className="rounded border border-amber-800 bg-amber-900 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-amber-800 disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
+                        >
+                          {editSaving ? "保存中..." : "保存"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelEditMenuItem}
+                          disabled={editSaving}
+                          className="rounded border px-3 py-1 text-xs dark:border-stone-700 dark:text-stone-300"
+                        >
+                          キャンセル
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="min-w-0">
+                      <span className="font-semibold dark:text-stone-100">{item.name}</span>
+                      {item.price != null && (
+                        <span className="ml-2 text-sm text-gray-500 dark:text-stone-400">
+                          ¥{item.price.toLocaleString()}
+                        </span>
+                      )}
+                      {item.description && (
+                        <p className="truncate text-sm text-gray-500 dark:text-stone-400">{item.description}</p>
+                      )}
+                      {photos.length === 0 && (
+                        <p className="text-xs text-gray-400 dark:text-stone-500">写真をアップロードすると選択できます</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {!editing && (
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleMove(index, -1)}
+                      disabled={index === 0}
+                      className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMove(index, 1)}
+                      disabled={index === menuItems.length - 1}
+                      className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => startEditMenuItem(item)}
+                      className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                    >
+                      編集
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(item.id)}
+                      className="rounded border px-2 py-1 text-sm text-red-600 dark:border-stone-700 dark:text-red-400"
+                    >
+                      削除
+                    </button>
                   </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleMove(index, -1)}
-                    disabled={index === 0}
-                    className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleMove(index, 1)}
-                    disabled={index === menuItems.length - 1}
-                    className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(item.id)}
-                    className="rounded border px-2 py-1 text-sm text-red-600 dark:border-stone-700 dark:text-red-400"
-                  >
-                    削除
-                  </button>
-                </div>
+                )}
               </div>
               {pickerOpen && kaftBaseUrl && (
                 <div className="mt-3 flex flex-wrap gap-2 border-t pt-3 dark:border-stone-700">

@@ -214,6 +214,22 @@ export async function createMenuItem(
   return response.json();
 }
 
+export async function updateMenuItem(
+  storeId: number,
+  menuItemId: number,
+  request: CreateMenuItemRequest,
+): Promise<MenuItemResponse> {
+  const response = await authorizedFetch(`/stores/${storeId}/menu-items/${menuItemId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await menuItemErrorMessage(response, "メニューの更新に失敗しました"));
+  }
+  return response.json();
+}
+
 export async function deleteMenuItem(storeId: number, menuItemId: number): Promise<void> {
   const response = await authorizedFetch(`/stores/${storeId}/menu-items/${menuItemId}`, {
     method: "DELETE",
