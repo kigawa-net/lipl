@@ -1,6 +1,7 @@
 package net.kigawa.lipl.store
 
 import kotlinx.serialization.Serializable
+import net.kigawa.lipl.ai.LpContentResponse
 import net.kigawa.lipl.menu.MenuItemResponse
 import net.kigawa.lipl.photo.PhotoResponse
 
@@ -73,5 +74,6 @@ data class PublicStoreResponse(
     val snsLinks: List<SnsLinkInput>,
     val menuItems: List<MenuItemResponse>,
     val photos: List<PhotoResponse>,
+    val lpContent: LpContentResponse?,
     val kaftBaseUrl: String,
 )

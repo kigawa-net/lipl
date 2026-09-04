@@ -62,6 +62,16 @@ export default function PublicStore() {
           {BUSINESS_CATEGORY_LABELS[store.businessCategory]}
         </span>
         <h1 className="mt-3 text-3xl font-bold text-gray-900 dark:text-stone-100">{store.name}</h1>
+        {store.lpContent && (
+          <p className="mt-2 text-lg font-semibold text-amber-800 dark:text-amber-500">
+            {store.lpContent.catchphrase}
+          </p>
+        )}
+        {store.lpContent && (
+          <p className="mt-4 text-sm leading-relaxed text-gray-700 dark:text-stone-300">
+            {store.lpContent.description}
+          </p>
+        )}
 
         <dl className="mt-6 space-y-2 text-sm text-gray-700 dark:text-stone-300">
           {(store.address || store.businessArea) && (

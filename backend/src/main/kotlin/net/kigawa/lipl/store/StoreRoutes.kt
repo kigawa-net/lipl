@@ -12,6 +12,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
+import net.kigawa.lipl.ai.LpRepository
 import net.kigawa.lipl.auth.ownerSub
 import net.kigawa.lipl.kaft.KaftClient
 import net.kigawa.lipl.menu.MenuItemRepository
@@ -135,6 +136,7 @@ fun Route.publicStoreRoutes(
     storeRepository: StoreRepository,
     menuItemRepository: MenuItemRepository,
     photoRepository: PhotoRepository,
+    lpRepository: LpRepository?,
     kaftBaseUrl: String,
 ) {
     get("/api/public/stores/{slug}") {
@@ -156,6 +158,7 @@ fun Route.publicStoreRoutes(
                 snsLinks = store.snsLinks,
                 menuItems = menuItemRepository.listByStore(store.id),
                 photos = photoRepository.listByStore(store.id),
+                lpContent = lpRepository?.get(store.id),
                 kaftBaseUrl = kaftBaseUrl,
             ),
         )
