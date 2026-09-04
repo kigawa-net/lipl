@@ -48,6 +48,19 @@ class MenuItemRepository {
         toResponse(id)
     }
 
+    fun update(storeId: Long, menuItemId: Long, request: CreateMenuItemRequest): MenuItemResponse = transaction {
+        val updated = MenuItemsTable.update({
+            (MenuItemsTable.id eq menuItemId) and (MenuItemsTable.storeId eq storeId)
+        }) {
+            it[name] = request.name
+            it[price] = request.price
+            it[description] = request.description
+        }
+        if (updated == 0) throw MenuItemNotFoundException()
+
+        toResponse(menuItemId)
+    }
+
     fun delete(storeId: Long, menuItemId: Long) = transaction {
         val deleted = MenuItemsTable.deleteWhere {
             (MenuItemsTable.id eq menuItemId) and (MenuItemsTable.storeId eq storeId)

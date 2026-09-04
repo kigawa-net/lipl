@@ -95,6 +95,41 @@ class MenuItemRepositoryTest {
     }
 
     @Test
+    fun `update overwrites name, price and description`() {
+        val item = menuItemRepository.create(storeId, CreateMenuItemRequest(name = "カレー", price = 800))
+
+        val updated = menuItemRepository.update(
+            storeId,
+            item.id,
+            CreateMenuItemRequest(name = "辛口カレー", price = 900, description = "スパイス増量"),
+        )
+
+        assertEquals("辛口カレー", updated.name)
+        assertEquals(900, updated.price)
+        assertEquals("スパイス増量", updated.description)
+    }
+
+    @Test
+    fun `update does not affect items of other stores`() {
+        val otherStoreId = storeRepository.create(
+            "owner-2",
+            CreateStoreRequest(name = "他店舗", businessCategory = BusinessCategory.CAFE, address = "住所2"),
+        ).id
+        val item = menuItemRepository.create(otherStoreId, CreateMenuItemRequest(name = "カレー"))
+
+        assertFailsWith<MenuItemNotFoundException> {
+            menuItemRepository.update(storeId, item.id, CreateMenuItemRequest(name = "改ざん"))
+        }
+    }
+
+    @Test
+    fun `update of nonexistent item throws`() {
+        assertFailsWith<MenuItemNotFoundException> {
+            menuItemRepository.update(storeId, 9999, CreateMenuItemRequest(name = "カレー"))
+        }
+    }
+
+    @Test
     fun `delete removes the item`() {
         val item = menuItemRepository.create(storeId, CreateMenuItemRequest(name = "カレー"))
 
