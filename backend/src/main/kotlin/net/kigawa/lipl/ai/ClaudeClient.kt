@@ -8,15 +8,18 @@ import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.Parameters
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 import java.time.Instant
 
 @Serializable
@@ -79,8 +82,9 @@ class AnthropicClaudeClient(private val config: ClaudeConfig) : ClaudeClient {
     @Volatile private var cachedToken: CachedToken? = null
 
     override suspend fun complete(systemPrompt: String, messages: List<ClaudeMessage>): String {
+        val accessToken = anthropicAccessToken()
         val response = client.post("https://api.anthropic.com/v1/messages") {
-            header("authorization", "Bearer ${anthropicAccessToken()}")
+            header("authorization", "Bearer $accessToken")
             header("anthropic-version", "2023-06-01")
             contentType(ContentType.Application.Json)
             setBody(
@@ -91,9 +95,14 @@ class AnthropicClaudeClient(private val config: ClaudeConfig) : ClaudeClient {
                     messages = messages,
                 ),
             )
-        }.body<ClaudeResponse>()
+        }
+        if (!response.status.isSuccess()) {
+            logger.error("Claude API呼び出しに失敗しました（status={}）: {}", response.status, response.bodyAsText())
+            error("Claude API呼び出しに失敗しました（status=${response.status}）")
+        }
 
-        return response.content.firstOrNull { it.type == "text" }?.text
+        val parsed = response.body<ClaudeResponse>()
+        return parsed.content.firstOrNull { it.type == "text" }?.text
             ?: error("Claude APIから予期しない応答形式を受け取りました")
     }
 
@@ -115,23 +124,46 @@ class AnthropicClaudeClient(private val config: ClaudeConfig) : ClaudeClient {
                         workspaceId = federation.workspaceId,
                     ),
                 )
-            }.body<AnthropicTokenResponse>()
+            }
+            if (!response.status.isSuccess()) {
+                logger.error(
+                    "Anthropicトークン交換に失敗しました（status={}）: {}",
+                    response.status,
+                    response.bodyAsText(),
+                )
+                error("Anthropicトークン交換に失敗しました（status=${response.status}）")
+            }
 
+            val parsed = response.body<AnthropicTokenResponse>()
             val refreshBufferSeconds = 120L
-            val safeLifetime = (response.expiresIn - refreshBufferSeconds).coerceAtLeast(30L)
-            val token = CachedToken(response.accessToken, Instant.now().plusSeconds(safeLifetime))
+            val safeLifetime = (parsed.expiresIn - refreshBufferSeconds).coerceAtLeast(30L)
+            val token = CachedToken(parsed.accessToken, Instant.now().plusSeconds(safeLifetime))
             cachedToken = token
             token.accessToken
         }
     }
 
-    private suspend fun fetchKeycloakToken(): String =
-        client.submitForm(
+    private suspend fun fetchKeycloakToken(): String {
+        val response = client.submitForm(
             url = federation.keycloakTokenUrl,
             formParameters = Parameters.build {
                 append("grant_type", "client_credentials")
                 append("client_id", federation.keycloakClientId)
                 append("client_secret", federation.keycloakClientSecret)
             },
-        ).body<KeycloakTokenResponse>().accessToken
+        )
+        if (!response.status.isSuccess()) {
+            logger.error(
+                "Keycloakトークン取得に失敗しました（status={}）: {}",
+                response.status,
+                response.bodyAsText(),
+            )
+            error("Keycloakトークン取得に失敗しました（status=${response.status}）")
+        }
+        return response.body<KeycloakTokenResponse>().accessToken
+    }
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(AnthropicClaudeClient::class.java)
+    }
 }
