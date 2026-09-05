@@ -30,11 +30,11 @@ data class InterviewStateResponse(
 @Serializable
 data class LpContentResponse(
     val catchphrase: String,
-    val description: String,
+    val pageHtml: String,
 )
 
 @Serializable
 data class UpdateLpContentRequest(
     val catchphrase: String,
-    val description: String,
+    val pageHtml: String,
 )

@@ -12,11 +12,16 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import net.kigawa.lipl.auth.ownerSub
+import net.kigawa.lipl.menu.MenuItemRepository
+import net.kigawa.lipl.photo.PhotoRepository
 import net.kigawa.lipl.store.StoreRepository
 
 fun Route.lpRoutes(
     storeRepository: StoreRepository,
     lpRepository: LpRepository,
+    menuItemRepository: MenuItemRepository,
+    photoRepository: PhotoRepository,
+    kaftBaseUrl: String,
 ) {
     authenticate("keycloak") {
         route("/api/stores/{storeId}/lp") {
@@ -74,8 +79,11 @@ fun Route.lpRoutes(
                 }
 
                 val store = storeRepository.get(storeId)
+                val menuItems = menuItemRepository.listByStore(storeId)
+                val photos = photoRepository.listByStore(storeId)
+                val context = buildGenerationContext(store, menuItems, photos, kaftBaseUrl)
                 try {
-                    call.respond(lpRepository.generate(storeId, principal.ownerSub, storeContextText(store)))
+                    call.respond(lpRepository.generate(storeId, principal.ownerSub, context))
                 } catch (e: LpGenerationLimitExceededException) {
                     call.respond(HttpStatusCode.Conflict, mapOf("error" to e.message))
                 }

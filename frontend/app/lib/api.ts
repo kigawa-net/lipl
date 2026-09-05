@@ -412,7 +412,7 @@ export async function sendInterviewMessage(
 
 export interface LpContentResponse {
   catchphrase: string;
-  description: string;
+  pageHtml: string;
 }
 
 export async function getLpContent(storeId: number): Promise<LpContentResponse | null> {

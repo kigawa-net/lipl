@@ -21,7 +21,8 @@ class LpRepositoryTest {
     private val storeRepository = StoreRepository()
     private var storeId: Long = 0
     private val ownerSub = "owner-1"
-    private val generationResponse = """{"catchphrase": "こだわりの一杯を、あなたに。", "description": "自家焙煎の豆を使った特製ブレンドが自慢の喫茶店です。"}"""
+    private val generationResponse =
+        """{"catchphrase": "こだわりの一杯を、あなたに。", "pageHtml": "<p>自家焙煎の豆を使った特製ブレンドが自慢の喫茶店です。</p>"}"""
 
     @BeforeTest
     fun setup() {
@@ -61,7 +62,7 @@ class LpRepositoryTest {
         val content = repository.generate(storeId, ownerSub, "店舗情報")
 
         assertEquals("こだわりの一杯を、あなたに。", content.catchphrase)
-        assertEquals("自家焙煎の豆を使った特製ブレンドが自慢の喫茶店です。", content.description)
+        assertEquals("<p>自家焙煎の豆を使った特製ブレンドが自慢の喫茶店です。</p>", content.pageHtml)
         assertEquals(content, repository.get(storeId))
     }
 
@@ -110,7 +111,7 @@ class LpRepositoryTest {
 
         val updated = repository.update(
             storeId,
-            UpdateLpContentRequest(catchphrase = "手直し後のコピー", description = "手直し後の説明文"),
+            UpdateLpContentRequest(catchphrase = "手直し後のコピー", pageHtml = "<p>手直し後の説明文</p>"),
         )
 
         assertEquals("手直し後のコピー", updated.catchphrase)
@@ -122,7 +123,7 @@ class LpRepositoryTest {
         val repository = LpRepository(FakeClaudeClient(emptyList()), InterviewRepository(FakeClaudeClient(emptyList())))
 
         assertFailsWith<LpContentNotFoundException> {
-            repository.update(storeId, UpdateLpContentRequest(catchphrase = "コピー", description = "説明文"))
+            repository.update(storeId, UpdateLpContentRequest(catchphrase = "コピー", pageHtml = "<p>説明文</p>"))
         }
     }
 

@@ -42,6 +42,14 @@ export default function PublicStore() {
     );
   }
 
+  if (store.lpContent && store.lpContent.pageHtml.trim() !== "") {
+    return (
+      <main className="min-h-screen bg-white">
+        <div dangerouslySetInnerHTML={{ __html: store.lpContent.pageHtml }} />
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-amber-50/40 dark:bg-stone-950">
       {store.photos.length > 0 && (
@@ -65,11 +73,6 @@ export default function PublicStore() {
         {store.lpContent && (
           <p className="mt-2 text-lg font-semibold text-amber-800 dark:text-amber-500">
             {store.lpContent.catchphrase}
-          </p>
-        )}
-        {store.lpContent && (
-          <p className="mt-4 text-sm leading-relaxed text-gray-700 dark:text-stone-300">
-            {store.lpContent.description}
           </p>
         )}
 
