@@ -73,7 +73,9 @@ class AnthropicClaudeClient(private val config: ClaudeConfig) : ClaudeClient {
     // refresh_expires_in、token_type、scope等）が含まれるため、無視するよう設定する。
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) {
-            json(Json { ignoreUnknownKeys = true })
+            // encodeDefaults=falseだとデフォルト値と等しいフィールド（grant_typeの固定値等）が
+            // リクエストJSONから丸ごと省略されてしまうため、明示的にtrueにする。
+            json(Json { ignoreUnknownKeys = true; encodeDefaults = true })
         }
     }
 
