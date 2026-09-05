@@ -16,7 +16,7 @@ class LpGenerationLimitExceededException :
     Exception("AI生成の上限に達しました。プランのアップグレードが必要です")
 
 @Serializable
-private data class GenerationResult(val catchphrase: String, val description: String)
+private data class GenerationResult(val catchphrase: String, val pageHtml: String)
 
 class LpRepository(
     private val claudeClient: ClaudeClient,
@@ -28,15 +28,16 @@ class LpRepository(
     }
 
     fun update(storeId: Long, request: UpdateLpContentRequest): LpContentResponse = transaction {
+        val sanitizedHtml = sanitizeGeneratedHtml(request.pageHtml)
         val updated = LpContentsTable.update({ LpContentsTable.storeId eq storeId }) {
             it[catchphrase] = request.catchphrase
-            it[description] = request.description
+            it[pageHtml] = sanitizedHtml
         }
         if (updated == 0) throw LpContentNotFoundException()
         LpContentsTable.selectAll().andWhere { LpContentsTable.storeId eq storeId }.single().toResponse()
     }
 
-    suspend fun generate(storeId: Long, ownerSub: String, storeContext: String): LpContentResponse {
+    suspend fun generate(storeId: Long, ownerSub: String, generationContext: String): LpContentResponse {
         val used = transaction {
             AiGenerationUsageTable.selectAll()
                 .andWhere { AiGenerationUsageTable.ownerSub eq ownerSub }
@@ -49,26 +50,27 @@ class LpRepository(
             "${if (it.role == "assistant") "Q" else "A"}: ${it.content}"
         }
         val prompt = buildString {
-            appendLine(storeContext)
+            appendLine(generationContext)
             appendLine()
             appendLine("以下はヒアリングの質疑応答です。")
             appendLine(qaText)
         }
         val raw = claudeClient.complete(GENERATION_SYSTEM_PROMPT, listOf(ClaudeMessage("user", prompt)))
         val parsed = parseGenerationResult(raw)
+        val sanitizedHtml = sanitizeGeneratedHtml(parsed.pageHtml)
 
         transaction {
             val exists = LpContentsTable.selectAll().andWhere { LpContentsTable.storeId eq storeId }.any()
             if (exists) {
                 LpContentsTable.update({ LpContentsTable.storeId eq storeId }) {
                     it[catchphrase] = parsed.catchphrase
-                    it[description] = parsed.description
+                    it[pageHtml] = sanitizedHtml
                 }
             } else {
                 LpContentsTable.insert {
                     it[LpContentsTable.storeId] = storeId
                     it[catchphrase] = parsed.catchphrase
-                    it[description] = parsed.description
+                    it[pageHtml] = sanitizedHtml
                 }
             }
 
@@ -88,7 +90,7 @@ class LpRepository(
         }
         interviewRepository.reset(storeId)
 
-        return LpContentResponse(catchphrase = parsed.catchphrase, description = parsed.description)
+        return LpContentResponse(catchphrase = parsed.catchphrase, pageHtml = sanitizedHtml)
     }
 
     private fun parseGenerationResult(raw: String): GenerationResult {
@@ -98,6 +100,6 @@ class LpRepository(
 
     private fun ResultRow.toResponse(): LpContentResponse = LpContentResponse(
         catchphrase = this[LpContentsTable.catchphrase],
-        description = this[LpContentsTable.description],
+        pageHtml = this[LpContentsTable.pageHtml] ?: "",
     )
 }

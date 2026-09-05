@@ -122,7 +122,11 @@ fun Application.module(
     if (storeRepository != null && interviewRepository != null) {
         routing { interviewRoutes(storeRepository, interviewRepository) }
     }
-    if (storeRepository != null && lpRepository != null) {
-        routing { lpRoutes(storeRepository, lpRepository) }
+    if (storeRepository != null && lpRepository != null && menuItemRepository != null &&
+        photoRepository != null && kaftConfig != null
+    ) {
+        routing {
+            lpRoutes(storeRepository, lpRepository, menuItemRepository, photoRepository, kaftConfig.publicBaseUrl)
+        }
     }
 }

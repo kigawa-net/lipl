@@ -6,7 +6,12 @@ import io.ktor.client.request.put
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.testApplication
 import net.kigawa.lipl.auth.KeycloakConfig
+import net.kigawa.lipl.kaft.KaftConfig
+import net.kigawa.lipl.menu.MenuItemRepository
+import net.kigawa.lipl.menu.MenuItemsTable
 import net.kigawa.lipl.module
+import net.kigawa.lipl.photo.PhotoRepository
+import net.kigawa.lipl.photo.PhotosTable
 import net.kigawa.lipl.store.BusinessCategory
 import net.kigawa.lipl.store.CreateStoreRequest
 import net.kigawa.lipl.store.StoreRepository
@@ -26,9 +31,16 @@ import kotlin.test.assertEquals
 class AiRouteTest {
 
     private val storeRepository = StoreRepository()
+    private val menuItemRepository = MenuItemRepository()
+    private val photoRepository = PhotoRepository()
     private val interviewRepository = InterviewRepository(FakeClaudeClient(emptyList()))
     private val lpRepository = LpRepository(FakeClaudeClient(emptyList()), interviewRepository)
     private val keycloakConfig = KeycloakConfig(issuer = "https://example.invalid/realms/lipl", audience = "account")
+    private val kaftConfig = KaftConfig(
+        baseUrl = "http://kaft.internal:8080",
+        publicBaseUrl = "https://kaft-stg.kigawa.net",
+        internalJwtSecret = "test-secret",
+    )
 
     @BeforeTest
     fun setup() {
@@ -37,14 +49,30 @@ class AiRouteTest {
             driver = "org.h2.Driver",
         )
         transaction {
-            SchemaUtils.create(StoresTable, StoreSnsLinksTable, InterviewMessagesTable, LpContentsTable, AiGenerationUsageTable)
+            SchemaUtils.create(
+                StoresTable,
+                StoreSnsLinksTable,
+                MenuItemsTable,
+                PhotosTable,
+                InterviewMessagesTable,
+                LpContentsTable,
+                AiGenerationUsageTable,
+            )
         }
     }
 
     @AfterTest
     fun tearDown() {
         transaction {
-            SchemaUtils.drop(AiGenerationUsageTable, LpContentsTable, InterviewMessagesTable, StoreSnsLinksTable, StoresTable)
+            SchemaUtils.drop(
+                AiGenerationUsageTable,
+                LpContentsTable,
+                InterviewMessagesTable,
+                PhotosTable,
+                MenuItemsTable,
+                StoreSnsLinksTable,
+                StoresTable,
+            )
         }
     }
 
@@ -52,7 +80,10 @@ class AiRouteTest {
         application {
             module(
                 storeRepository = storeRepository,
+                menuItemRepository = menuItemRepository,
+                photoRepository = photoRepository,
                 keycloakConfig = keycloakConfig,
+                kaftConfig = kaftConfig,
                 interviewRepository = interviewRepository,
                 lpRepository = lpRepository,
             )

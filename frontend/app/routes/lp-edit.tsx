@@ -27,7 +27,7 @@ export default function LpEdit() {
   const [saving, setSaving] = useState(false);
 
   const [catchphrase, setCatchphrase] = useState("");
-  const [description, setDescription] = useState("");
+  const [pageHtml, setPageHtml] = useState("");
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -39,7 +39,7 @@ export default function LpEdit() {
       .then(([lpContent, interviewState, store]) => {
         setContent(lpContent);
         setCatchphrase(lpContent?.catchphrase ?? "");
-        setDescription(lpContent?.description ?? "");
+        setPageHtml(lpContent?.pageHtml ?? "");
         setHasInterview(interviewState.messages.length > 0);
         setSlug(store.slug);
         setPublished(store.published);
@@ -56,7 +56,7 @@ export default function LpEdit() {
       const generated = await generateLpContent(numericStoreId);
       setContent(generated);
       setCatchphrase(generated.catchphrase);
-      setDescription(generated.description);
+      setPageHtml(generated.pageHtml);
       const store = await setStorePublished(numericStoreId, true);
       setPublished(store.published);
     } catch (e) {
@@ -72,8 +72,9 @@ export default function LpEdit() {
     setError(null);
     setSaved(false);
     try {
-      const updated = await updateLpContent(numericStoreId, { catchphrase, description });
+      const updated = await updateLpContent(numericStoreId, { catchphrase, pageHtml });
       setContent(updated);
+      setPageHtml(updated.pageHtml);
       setSaved(true);
     } catch (e) {
       setError((e as Error).message);
@@ -94,7 +95,7 @@ export default function LpEdit() {
     typeof window !== "undefined" ? `${window.location.origin}/p/${slug}` : `/p/${slug}`;
 
   return (
-    <main className="mx-auto max-w-2xl p-8">
+    <main className="mx-auto max-w-3xl p-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold dark:text-stone-100">LP編集</h1>
         <a href={`/stores/${storeId}`} className="text-sm text-gray-500 underline dark:text-stone-500">
@@ -125,7 +126,7 @@ export default function LpEdit() {
           <p className="mb-4 text-sm text-gray-600 dark:text-stone-300">
             まだLPが生成されていません。
             {hasInterview
-              ? "下のボタンからAIヒアリングの内容をもとにLPを生成し、そのまま公開できます。"
+              ? "下のボタンからAIヒアリングの内容・メニュー・写真をもとにページ全体のHTMLを生成し、そのまま公開できます。"
               : "先にAIヒアリングでお店の魅力を教えてください。"}
           </p>
           {hasInterview ? (
@@ -165,18 +166,31 @@ export default function LpEdit() {
               </div>
 
               <div className="field">
+                <label className="field-label">プレビュー</label>
+                <iframe
+                  title="LPプレビュー"
+                  srcDoc={pageHtml}
+                  sandbox=""
+                  className="h-96 w-full rounded-lg border border-gray-200 bg-white dark:border-stone-700"
+                />
+              </div>
+
+              <div className="field">
                 <label className="field-label">
-                  <span>紹介文</span>
-                  <span className="field-count">{description.length}/2000</span>
+                  <span>ページHTML</span>
+                  <span className="field-count">{pageHtml.length}/20000</span>
                 </label>
                 <textarea
                   required
-                  rows={6}
-                  maxLength={2000}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="field-textarea field-input"
+                  rows={12}
+                  maxLength={20000}
+                  value={pageHtml}
+                  onChange={(e) => setPageHtml(e.target.value)}
+                  className="field-textarea field-input font-mono text-xs"
                 />
+                <p className="field-hint mt-1">
+                  AIが生成したHTMLです。直接編集して保存できます（script・外部リソースは保存時に除去されます）。
+                </p>
               </div>
             </div>
           </div>

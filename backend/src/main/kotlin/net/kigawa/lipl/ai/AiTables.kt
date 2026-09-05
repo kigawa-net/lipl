@@ -19,7 +19,7 @@ object InterviewMessagesTable : Table("interview_messages") {
 object LpContentsTable : Table("lp_contents") {
     val storeId = long("store_id").references(StoresTable.id, onDelete = ReferenceOption.CASCADE)
     val catchphrase = varchar("catchphrase", 200)
-    val description = varchar("description", 2000)
+    val pageHtml = text("page_html").nullable()
     val updatedAt = timestamp("updated_at").defaultExpression(CurrentTimestamp)
 
     override val primaryKey = PrimaryKey(storeId)
