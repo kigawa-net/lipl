@@ -16,6 +16,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import java.time.Instant
 
 @Serializable
@@ -65,8 +66,12 @@ private data class CachedToken(val accessToken: String, val expiresAt: Instant)
 // （Workload Identity Federation）。トークンは期限切れ120秒前まで再利用する。
 class AnthropicClaudeClient(private val config: ClaudeConfig) : ClaudeClient {
 
+    // KeycloakやAnthropicのトークンレスポンスには未宣言のフィールド（expires_in以外の
+    // refresh_expires_in、token_type、scope等）が含まれるため、無視するよう設定する。
     private val client = HttpClient(CIO) {
-        install(ContentNegotiation) { json() }
+        install(ContentNegotiation) {
+            json(Json { ignoreUnknownKeys = true })
+        }
     }
 
     private val federation = config.federation
