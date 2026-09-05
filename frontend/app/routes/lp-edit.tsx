@@ -4,6 +4,8 @@ import {
   generateLpContent,
   getInterviewState,
   getLpContent,
+  getStore,
+  setStorePublished,
   updateLpContent,
   type LpContentResponse,
 } from "~/lib/api";
@@ -16,6 +18,8 @@ export default function LpEdit() {
 
   const [content, setContent] = useState<LpContentResponse | null>(null);
   const [hasInterview, setHasInterview] = useState(false);
+  const [slug, setSlug] = useState("");
+  const [published, setPublished] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -31,17 +35,20 @@ export default function LpEdit() {
       return;
     }
 
-    Promise.all([getLpContent(numericStoreId), getInterviewState(numericStoreId)])
-      .then(([lpContent, interviewState]) => {
+    Promise.all([getLpContent(numericStoreId), getInterviewState(numericStoreId), getStore(numericStoreId)])
+      .then(([lpContent, interviewState, store]) => {
         setContent(lpContent);
         setCatchphrase(lpContent?.catchphrase ?? "");
         setDescription(lpContent?.description ?? "");
         setHasInterview(interviewState.messages.length > 0);
+        setSlug(store.slug);
+        setPublished(store.published);
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, [numericStoreId, navigate]);
 
+  // 生成したLPはそのまま公開する（生成→公開まで一度の操作で完結させる）。
   async function handleGenerate() {
     setGenerating(true);
     setError(null);
@@ -50,6 +57,8 @@ export default function LpEdit() {
       setContent(generated);
       setCatchphrase(generated.catchphrase);
       setDescription(generated.description);
+      const store = await setStorePublished(numericStoreId, true);
+      setPublished(store.published);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -81,6 +90,9 @@ export default function LpEdit() {
     );
   }
 
+  const publicUrl =
+    typeof window !== "undefined" ? `${window.location.origin}/p/${slug}` : `/p/${slug}`;
+
   return (
     <main className="mx-auto max-w-2xl p-8">
       <div className="mb-6 flex items-center justify-between">
@@ -92,12 +104,28 @@ export default function LpEdit() {
 
       {error && <p className="mb-4 text-red-600 dark:text-red-400">{error}</p>}
 
+      {published && (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-stone-700 dark:bg-stone-900">
+          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-400">
+            公開中
+          </span>
+          <a
+            href={`/p/${slug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-amber-800 underline hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400"
+          >
+            {publicUrl}
+          </a>
+        </div>
+      )}
+
       {content === null ? (
         <div className="form-card">
           <p className="mb-4 text-sm text-gray-600 dark:text-stone-300">
             まだLPが生成されていません。
             {hasInterview
-              ? "下のボタンからAIヒアリングの内容をもとにLPを生成できます。"
+              ? "下のボタンからAIヒアリングの内容をもとにLPを生成し、そのまま公開できます。"
               : "先にAIヒアリングでお店の魅力を教えてください。"}
           </p>
           {hasInterview ? (
@@ -107,7 +135,7 @@ export default function LpEdit() {
               disabled={generating}
               className="rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
             >
-              {generating ? "生成中..." : "LPを生成する"}
+              {generating ? "生成・公開中..." : "LPを生成して公開する"}
             </button>
           ) : (
             <a
@@ -169,7 +197,7 @@ export default function LpEdit() {
               disabled={generating}
               className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-600"
             >
-              {generating ? "再生成中..." : "AIで再生成する"}
+              {generating ? "再生成・公開中..." : "AIで再生成して公開する"}
             </button>
           </div>
         </form>
