@@ -12,6 +12,7 @@ import {
   reorderMenuItems,
   reorderPhotos,
   setMenuItemPhoto,
+  setStorePublished,
   updateMenuItem,
   updateStore,
   uploadPhoto,
@@ -78,6 +79,10 @@ export default function StoreDetail() {
   const [storeSaving, setStoreSaving] = useState(false);
   const [storeSaved, setStoreSaved] = useState(false);
 
+  const [slug, setSlug] = useState("");
+  const [published, setPublished] = useState(false);
+  const [publishSaving, setPublishSaving] = useState(false);
+
   const [photos, setPhotos] = useState<PhotoResponse[]>([]);
   const [kaftBaseUrl, setKaftBaseUrl] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -109,6 +114,8 @@ export default function StoreDetail() {
         setBusinessArea(s.businessArea ?? "");
         setBusinessHours(s.businessHours ?? "");
         setPhone(s.phone ?? "");
+        setSlug(s.slug);
+        setPublished(s.published);
         setSnsUrls((prev) => {
           const next = { ...prev };
           s.snsLinks.forEach((link) => {
@@ -136,6 +143,19 @@ export default function StoreDetail() {
   function handleCategoryChange(category: BusinessCategory) {
     setBusinessCategory(category);
     setOperationType(defaultOperationType(category));
+  }
+
+  async function handleTogglePublish() {
+    setPublishSaving(true);
+    setStoreError(null);
+    try {
+      const updated = await setStorePublished(numericStoreId, !published);
+      setPublished(updated.published);
+    } catch (e) {
+      setStoreError((e as Error).message);
+    } finally {
+      setPublishSaving(false);
+    }
   }
 
   async function handleStoreSubmit(e: React.FormEvent) {
@@ -333,6 +353,36 @@ export default function StoreDetail() {
         <a href="/dashboard" className="text-sm text-gray-500 underline dark:text-stone-500">
           店舗一覧に戻る
         </a>
+      </div>
+
+      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-stone-700 dark:bg-stone-900">
+        {published ? (
+          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-400">
+            公開中
+          </span>
+        ) : (
+          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500 dark:bg-stone-800 dark:text-stone-400">
+            未公開
+          </span>
+        )}
+        {published && slug && (
+          <a
+            href={`/p/${slug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-amber-800 underline hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400"
+          >
+            {typeof window !== "undefined" ? `${window.location.origin}/p/${slug}` : `/p/${slug}`}
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={handleTogglePublish}
+          disabled={publishSaving}
+          className="ml-auto rounded-lg bg-amber-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
+        >
+          {publishSaving ? "更新中..." : published ? "非公開にする" : "公開する"}
+        </button>
       </div>
 
       <div className="mb-8 flex gap-3">
