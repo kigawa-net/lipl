@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { deleteStore, listStores, type StoreResponse } from "~/lib/api";
+import {
+  deleteStore,
+  getAiUsage,
+  getDebugConfig,
+  listStores,
+  setAiUsage,
+  type AiUsageResponse,
+  type StoreResponse,
+} from "~/lib/api";
 import { BUSINESS_CATEGORY_LABELS, OPERATION_TYPE_LABELS } from "~/lib/labels";
 import { isAuthenticated } from "~/lib/oidc";
 
@@ -11,6 +19,12 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
+  const [debugMenuEnabled, setDebugMenuEnabled] = useState(false);
+  const [aiUsage, setAiUsageState] = useState<AiUsageResponse | null>(null);
+  const [aiUsageInput, setAiUsageInput] = useState("");
+  const [aiUsageSaving, setAiUsageSaving] = useState(false);
+  const [aiUsageError, setAiUsageError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!isAuthenticated()) {
       navigate("/login", { replace: true });
@@ -20,7 +34,38 @@ export default function Dashboard() {
       .then(setStores)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
+
+    getDebugConfig()
+      .then((config) => {
+        setDebugMenuEnabled(config.debugMenuEnabled);
+        if (config.debugMenuEnabled) {
+          getAiUsage()
+            .then((usage) => {
+              setAiUsageState(usage);
+              setAiUsageInput(String(usage.generationCount));
+            })
+            .catch((e: Error) => setAiUsageError(e.message));
+        }
+      })
+      .catch(() => {
+        // デバッグ設定の取得失敗は無視する（本番相当の環境では未設定のため常に失敗し得る）
+      });
   }, [navigate]);
+
+  async function handleSetAiUsage(e: React.FormEvent) {
+    e.preventDefault();
+    setAiUsageSaving(true);
+    setAiUsageError(null);
+    try {
+      const usage = await setAiUsage(Number(aiUsageInput));
+      setAiUsageState(usage);
+      setAiUsageInput(String(usage.generationCount));
+    } catch (e) {
+      setAiUsageError((e as Error).message);
+    } finally {
+      setAiUsageSaving(false);
+    }
+  }
 
   async function handleDelete(store: StoreResponse) {
     if (!window.confirm(`「${store.name}」を削除します。メニューや写真もすべて削除され、元に戻せません。よろしいですか？`)) {
@@ -116,6 +161,37 @@ export default function Dashboard() {
       >
         + 新しい店舗を登録する
       </a>
+
+      {debugMenuEnabled && (
+        <div className="mt-10 rounded-lg border border-dashed border-red-300 p-4 dark:border-red-800">
+          <h2 className="mb-2 text-sm font-bold text-red-700 dark:text-red-400">
+            デバッグメニュー（検証環境限定）
+          </h2>
+          {aiUsageError && <p className="mb-2 text-sm text-red-600 dark:text-red-400">{aiUsageError}</p>}
+          <form onSubmit={handleSetAiUsage} className="flex items-end gap-3">
+            <div className="field">
+              <label className="field-label">
+                <span>AI生成の実行回数</span>
+                {aiUsage && <span className="field-tag">上限 {aiUsage.limit}</span>}
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={aiUsageInput}
+                onChange={(e) => setAiUsageInput(e.target.value)}
+                className="field-input"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={aiUsageSaving}
+              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+            >
+              {aiUsageSaving ? "更新中..." : "更新する"}
+            </button>
+          </form>
+        </div>
+      )}
     </main>
   );
 }
