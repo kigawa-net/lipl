@@ -448,3 +448,40 @@ export async function generateLpContent(storeId: number): Promise<LpContentRespo
   }
   return response.json();
 }
+
+export interface DebugConfigResponse {
+  debugMenuEnabled: boolean;
+}
+
+export interface AiUsageResponse {
+  generationCount: number;
+  limit: number;
+}
+
+export async function getDebugConfig(): Promise<DebugConfigResponse> {
+  const response = await fetch("/api/debug/config");
+  if (!response.ok) {
+    throw new Error(`デバッグ設定の取得に失敗しました（${response.status}）`);
+  }
+  return response.json();
+}
+
+export async function getAiUsage(): Promise<AiUsageResponse> {
+  const response = await authorizedFetch("/debug/ai-usage");
+  if (!response.ok) {
+    throw new Error(await aiErrorMessage(response, "AI生成回数の取得に失敗しました"));
+  }
+  return response.json();
+}
+
+export async function setAiUsage(generationCount: number): Promise<AiUsageResponse> {
+  const response = await authorizedFetch("/debug/ai-usage", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ generationCount }),
+  });
+  if (!response.ok) {
+    throw new Error(await aiErrorMessage(response, "AI生成回数の更新に失敗しました"));
+  }
+  return response.json();
+}

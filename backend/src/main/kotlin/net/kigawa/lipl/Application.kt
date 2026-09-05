@@ -25,6 +25,9 @@ import net.kigawa.lipl.db.connectDatabase
 import net.kigawa.lipl.db.createDataSource
 import net.kigawa.lipl.db.dbConfigFromEnv
 import net.kigawa.lipl.db.migrate
+import net.kigawa.lipl.debug.DebugConfig
+import net.kigawa.lipl.debug.debugConfigFromEnv
+import net.kigawa.lipl.debug.debugRoutes
 import net.kigawa.lipl.health.healthRoutes
 import net.kigawa.lipl.kaft.KaftClient
 import net.kigawa.lipl.kaft.KaftConfig
@@ -55,6 +58,7 @@ fun main() {
     val claudeClient: ClaudeClient = AnthropicClaudeClient(claudeConfigFromEnv())
     val interviewRepository = InterviewRepository(claudeClient)
     val lpRepository = LpRepository(claudeClient, interviewRepository)
+    val debugConfig = debugConfigFromEnv()
 
     embeddedServer(Netty, port = port) {
         module(
@@ -66,6 +70,7 @@ fun main() {
             kaftConfig = kaftConfig,
             interviewRepository = interviewRepository,
             lpRepository = lpRepository,
+            debugConfig = debugConfig,
         )
     }.start(wait = true)
 }
@@ -81,6 +86,7 @@ fun Application.module(
     kaftConfig: KaftConfig? = null,
     interviewRepository: InterviewRepository? = null,
     lpRepository: LpRepository? = null,
+    debugConfig: DebugConfig = DebugConfig(debugMenuEnabled = false),
 ) {
     install(ContentNegotiation) {
         json()
@@ -128,5 +134,8 @@ fun Application.module(
         routing {
             lpRoutes(storeRepository, lpRepository, menuItemRepository, photoRepository, kaftConfig.publicBaseUrl)
         }
+    }
+    if (lpRepository != null) {
+        routing { debugRoutes(debugConfig, lpRepository) }
     }
 }

@@ -23,6 +23,30 @@ class LpRepository(
     private val interviewRepository: InterviewRepository,
 ) {
 
+    // デバッグメニュー（stg等の検証環境限定）用。アカウント単位のAI生成回数を参照・変更する。
+    fun getUsage(ownerSub: String): Int = transaction {
+        AiGenerationUsageTable.selectAll()
+            .andWhere { AiGenerationUsageTable.ownerSub eq ownerSub }
+            .singleOrNull()
+            ?.get(AiGenerationUsageTable.generationCount) ?: 0
+    }
+
+    fun setUsage(ownerSub: String, count: Int) = transaction {
+        val existing = AiGenerationUsageTable.selectAll()
+            .andWhere { AiGenerationUsageTable.ownerSub eq ownerSub }
+            .singleOrNull()
+        if (existing == null) {
+            AiGenerationUsageTable.insert {
+                it[AiGenerationUsageTable.ownerSub] = ownerSub
+                it[generationCount] = count
+            }
+        } else {
+            AiGenerationUsageTable.update({ AiGenerationUsageTable.ownerSub eq ownerSub }) {
+                it[generationCount] = count
+            }
+        }
+    }
+
     fun get(storeId: Long): LpContentResponse? = transaction {
         LpContentsTable.selectAll().andWhere { LpContentsTable.storeId eq storeId }.singleOrNull()?.toResponse()
     }
