@@ -24,7 +24,7 @@ fun claudeConfigFromEnv(): ClaudeConfig {
         ?: error("環境変数 KEYCLOAK_ISSUER が設定されていません")
 
     return ClaudeConfig(
-        model = System.getenv("ANTHROPIC_MODEL") ?: "claude-3-5-haiku-20241022",
+        model = System.getenv("ANTHROPIC_MODEL") ?: "claude-haiku-4-5-20251001",
         federation = AnthropicFederationConfig(
             keycloakTokenUrl = "$keycloakIssuer/protocol/openid-connect/token",
             keycloakClientId = System.getenv("ANTHROPIC_KEYCLOAK_CLIENT_ID")
