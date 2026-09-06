@@ -1,6 +1,7 @@
 package net.kigawa.lipl.ai
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -9,11 +10,15 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 
 class LpContentNotFoundException : Exception("LPがまだ生成されていません")
 
 class LpGenerationLimitExceededException :
     Exception("AI生成の上限に達しました。プランのアップグレードが必要です")
+
+class LpGenerationFailedException :
+    Exception("LP生成に失敗しました。もう一度お試しください")
 
 @Serializable
 private data class GenerationResult(val catchphrase: String, val pageHtml: String)
@@ -79,8 +84,15 @@ class LpRepository(
             appendLine("以下はヒアリングの質疑応答です。")
             appendLine(qaText)
         }
-        val raw = claudeClient.complete(GENERATION_SYSTEM_PROMPT, listOf(ClaudeMessage("user", prompt)))
-        val parsed = parseGenerationResult(raw)
+        // ページ全体のHTMLを生成するため、質問応答用より大きなトークン上限が必要
+        // （既定の1024ではJSONの途中で応答が打ち切られ、パース不能になっていた）。
+        val raw = claudeClient.complete(GENERATION_SYSTEM_PROMPT, listOf(ClaudeMessage("user", prompt)), maxTokens = 8192)
+        val parsed = try {
+            parseGenerationResult(raw)
+        } catch (e: SerializationException) {
+            logger.error("Claudeの生成結果のパースに失敗しました: {}", raw, e)
+            throw LpGenerationFailedException()
+        }
         val sanitizedHtml = sanitizeGeneratedHtml(parsed.pageHtml)
 
         transaction {
@@ -126,4 +138,8 @@ class LpRepository(
         catchphrase = this[LpContentsTable.catchphrase],
         pageHtml = this[LpContentsTable.pageHtml] ?: "",
     )
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(LpRepository::class.java)
+    }
 }
