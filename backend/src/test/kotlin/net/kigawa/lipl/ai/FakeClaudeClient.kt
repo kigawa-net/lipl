@@ -5,7 +5,16 @@ class FakeClaudeClient(private val responses: List<String>) : ClaudeClient {
     var callCount = 0
         private set
 
-    override suspend fun complete(systemPrompt: String, messages: List<ClaudeMessage>, maxTokens: Int): String {
+    override suspend fun complete(systemPrompt: String, messages: List<ClaudeMessage>, maxTokens: Int): String =
+        nextResponse()
+
+    override suspend fun completeForGeneration(
+        systemPrompt: String,
+        messages: List<ClaudeMessage>,
+        maxTokens: Int,
+    ): String = nextResponse()
+
+    private fun nextResponse(): String {
         val response = responses.getOrElse(callCount) { responses.last() }
         callCount++
         return response

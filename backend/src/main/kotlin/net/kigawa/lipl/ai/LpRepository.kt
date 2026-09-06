@@ -86,7 +86,11 @@ class LpRepository(
         }
         // ページ全体のHTMLを生成するため、質問応答用より大きなトークン上限が必要
         // （既定の1024ではJSONの途中で応答が打ち切られ、パース不能になっていた）。
-        val raw = claudeClient.complete(GENERATION_SYSTEM_PROMPT, listOf(ClaudeMessage("user", prompt)), maxTokens = 8192)
+        val raw = claudeClient.completeForGeneration(
+            GENERATION_SYSTEM_PROMPT,
+            listOf(ClaudeMessage("user", prompt)),
+            maxTokens = 8192,
+        )
         val parsed = try {
             parseGenerationResult(raw)
         } catch (e: SerializationException) {
