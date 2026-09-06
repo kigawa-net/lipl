@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import {
   generateLpContent,
   getInterviewState,
@@ -9,11 +9,9 @@ import {
   updateLpContent,
   type LpContentResponse,
 } from "~/lib/api";
-import { isAuthenticated } from "~/lib/oidc";
 
 export default function LpEdit() {
   const { storeId } = useParams();
-  const navigate = useNavigate();
   const numericStoreId = Number(storeId);
 
   const [content, setContent] = useState<LpContentResponse | null>(null);
@@ -30,11 +28,6 @@ export default function LpEdit() {
   const [pageHtml, setPageHtml] = useState("");
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login", { replace: true });
-      return;
-    }
-
     Promise.all([getLpContent(numericStoreId), getInterviewState(numericStoreId), getStore(numericStoreId)])
       .then(([lpContent, interviewState, store]) => {
         setContent(lpContent);
@@ -46,7 +39,7 @@ export default function LpEdit() {
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [numericStoreId, navigate]);
+  }, [numericStoreId]);
 
   // 生成したLPはそのまま公開する（生成→公開まで一度の操作で完結させる）。
   async function handleGenerate() {

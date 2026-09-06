@@ -1,5 +1,3 @@
-import { getAccessToken, refreshAccessToken } from "~/lib/oidc";
-
 export type BusinessCategory =
   | "CAFE"
   | "IZAKAYA"
@@ -59,38 +57,16 @@ export interface PublicStoreResponse {
   kaftBaseUrl: string;
 }
 
-function fetchWithToken(path: string, token: string, init?: RequestInit): Promise<Response> {
-  return fetch(`/api${path}`, {
-    ...init,
-    headers: {
-      ...init?.headers,
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
-// Keycloakのaccess tokenは短命（5分）なため、401が返ってきた場合は
-// refresh tokenで再取得して一度だけリトライする。再ログインが必要な場合は
-// トークンを破棄してログイン画面へ遷移する。
+// 認証はhttpOnly Cookie（バックエンドが発行・更新）で行うため、トークンの保持・
+// 手動でのリフレッシュはフロントエンドでは行わない。credentials:"include"でCookieを
+// 送るだけでよく、アクセストークンの更新はバックエンドがリクエスト単位で透過的に行う。
 async function authorizedFetch(path: string, init?: RequestInit): Promise<Response> {
-  const token = getAccessToken();
-  if (!token) {
+  const response = await fetch(`/api${path}`, { ...init, credentials: "include" });
+  if (response.status === 401) {
     window.location.assign("/login");
     throw new Error("ログインが必要です");
   }
-
-  const response = await fetchWithToken(path, token, init);
-  if (response.status !== 401) {
-    return response;
-  }
-
-  const refreshed = await refreshAccessToken();
-  if (!refreshed) {
-    window.location.assign("/login");
-    throw new Error("セッションの有効期限が切れました。再度ログインしてください");
-  }
-
-  return fetchWithToken(path, refreshed, init);
+  return response;
 }
 
 export async function listStores(): Promise<StoreResponse[]> {

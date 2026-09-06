@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
 import {
   createMenuItem,
   createStore,
@@ -29,7 +28,6 @@ import {
   SNS_PLATFORM_LABELS,
   SNS_PLATFORMS,
 } from "~/lib/labels";
-import { isAuthenticated } from "~/lib/oidc";
 
 const STEP_LABELS = ["基本情報", "営業形態", "SNS", "メニュー", "写真", "公開"];
 const PHOTO_LIMIT = 15;
@@ -93,7 +91,6 @@ function ChevronIcon() {
 }
 
 export default function StoreWizard() {
-  const navigate = useNavigate();
   const [stepIndex, setStepIndex] = useState(0);
 
   // 基本情報〜SNSリンク（店舗作成前はローカル状態のみ）
@@ -150,11 +147,6 @@ export default function StoreWizard() {
   const [restored, setRestored] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login", { replace: true });
-      return;
-    }
-
     const draft = loadDraft();
     if (draft) {
       setStepIndex(draft.stepIndex);
@@ -176,7 +168,7 @@ export default function StoreWizard() {
       }
     }
     setRestored(true);
-  }, [navigate]);
+  }, []);
 
   // 復元処理が終わるまでは保存しない（空の初期状態で保存済みの下書きを
   // 上書きしてしまうのを防ぐため）。

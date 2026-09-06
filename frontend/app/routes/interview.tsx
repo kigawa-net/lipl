@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { getInterviewState, sendInterviewMessage, type InterviewStateResponse } from "~/lib/api";
-import { isAuthenticated } from "~/lib/oidc";
 
 export default function Interview() {
   const { storeId } = useParams();
-  const navigate = useNavigate();
   const numericStoreId = Number(storeId);
 
   const [state, setState] = useState<InterviewStateResponse | null>(null);
@@ -15,11 +13,6 @@ export default function Interview() {
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login", { replace: true });
-      return;
-    }
-
     getInterviewState(numericStoreId)
       .then(async (initial) => {
         if (initial.messages.length === 0) {
@@ -31,7 +24,7 @@ export default function Interview() {
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [numericStoreId, navigate]);
+  }, [numericStoreId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
