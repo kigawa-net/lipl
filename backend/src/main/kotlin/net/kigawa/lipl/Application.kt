@@ -63,6 +63,7 @@ fun main() {
     val menuItemRepository = MenuItemRepository()
     val photoRepository = PhotoRepository()
     val keycloakConfig = keycloakConfigFromEnv()
+    val sessionEncryptionKey = sessionEncryptionKeyFromEnv()
     val kaftConfig = kaftConfigFromEnv()
     val kaftClient = KaftClient(kaftConfig)
     val claudeClient: ClaudeClient = AnthropicClaudeClient(claudeConfigFromEnv())
@@ -76,6 +77,7 @@ fun main() {
             menuItemRepository = menuItemRepository,
             photoRepository = photoRepository,
             keycloakConfig = keycloakConfig,
+            sessionEncryptionKey = sessionEncryptionKey,
             kaftClient = kaftClient,
             kaftConfig = kaftConfig,
             interviewRepository = interviewRepository,
@@ -92,6 +94,7 @@ fun Application.module(
     menuItemRepository: MenuItemRepository? = null,
     photoRepository: PhotoRepository? = null,
     keycloakConfig: KeycloakConfig? = null,
+    sessionEncryptionKey: ByteArray? = null,
     kaftClient: KaftClient? = null,
     kaftConfig: KaftConfig? = null,
     interviewRepository: InterviewRepository? = null,
@@ -122,13 +125,9 @@ fun Application.module(
                 clientJson(Json { ignoreUnknownKeys = true; encodeDefaults = true })
             }
         }
-        // SESSION_ENCRYPTION_KEY未設定（テスト等でKeycloakConfigのみ渡すケース）では、
-        // 起動時エラーにせずダミー鍵にフォールバックする（本番はmain()経由で必ず設定される）。
-        val sessionKey = try {
-            sessionEncryptionKeyFromEnv()
-        } catch (e: IllegalStateException) {
-            ByteArray(32)
-        }
+        // 本番はmain()がSESSION_ENCRYPTION_KEYを起動時に必須チェックして渡す。
+        // テストなどsessionEncryptionKeyを渡さないmodule()呼び出しでのみダミー鍵を使う。
+        val sessionKey = sessionEncryptionKey ?: ByteArray(32)
         val sessionAuth = SessionAuth(keycloakConfig, jwkProvider, authHttpClient, SessionCookieCodec(sessionKey))
         configureKeycloakAuth(sessionAuth)
         routing { authRoutes(keycloakConfig, sessionAuth, authHttpClient) }
