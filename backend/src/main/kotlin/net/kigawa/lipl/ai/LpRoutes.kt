@@ -86,6 +86,8 @@ fun Route.lpRoutes(
                     call.respond(lpRepository.generate(storeId, principal.ownerSub, context))
                 } catch (e: LpGenerationLimitExceededException) {
                     call.respond(HttpStatusCode.Conflict, mapOf("error" to e.message))
+                } catch (e: LpGenerationFailedException) {
+                    call.respond(HttpStatusCode.BadGateway, mapOf("error" to e.message))
                 }
             }
         }

@@ -137,4 +137,29 @@ class LpRepositoryTest {
 
         assertEquals("こだわりの一杯を、あなたに。", content.catchphrase)
     }
+
+    @Test
+    fun `generate throws a clear error when Claude's response is truncated mid-JSON`() = runBlocking {
+        val interviewRepository = InterviewRepository(FakeClaudeClient(listOf("質問1")))
+        val truncated = """{"catchphrase": "こだわりの一杯を、あなたに。", "pageHtml": "<p>途中で切れた"""
+        val repository = LpRepository(FakeClaudeClient(listOf(truncated)), interviewRepository)
+
+        assertFailsWith<LpGenerationFailedException> {
+            repository.generate(storeId, ownerSub, "店舗情報")
+        }
+    }
+
+    @Test
+    fun `a failed generation does not consume the lifetime generation limit`() = runBlocking {
+        val interviewRepository = InterviewRepository(FakeClaudeClient(listOf("質問1")))
+        val truncated = """{"catchphrase": "こだわりの一杯を、あなたに。", "pageHtml": "<p>途中で切れた"""
+        val repository = LpRepository(FakeClaudeClient(listOf(truncated, generationResponse)), interviewRepository)
+
+        assertFailsWith<LpGenerationFailedException> {
+            repository.generate(storeId, ownerSub, "店舗情報")
+        }
+
+        val content = repository.generate(storeId, ownerSub, "店舗情報")
+        assertEquals("こだわりの一杯を、あなたに。", content.catchphrase)
+    }
 }

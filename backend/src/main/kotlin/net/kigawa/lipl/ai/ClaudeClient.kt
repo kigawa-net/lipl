@@ -26,7 +26,7 @@ import java.time.Instant
 data class ClaudeMessage(val role: String, val content: String)
 
 interface ClaudeClient {
-    suspend fun complete(systemPrompt: String, messages: List<ClaudeMessage>): String
+    suspend fun complete(systemPrompt: String, messages: List<ClaudeMessage>, maxTokens: Int = 1024): String
 }
 
 @Serializable
@@ -83,7 +83,7 @@ class AnthropicClaudeClient(private val config: ClaudeConfig) : ClaudeClient {
     private val mutex = Mutex()
     @Volatile private var cachedToken: CachedToken? = null
 
-    override suspend fun complete(systemPrompt: String, messages: List<ClaudeMessage>): String {
+    override suspend fun complete(systemPrompt: String, messages: List<ClaudeMessage>, maxTokens: Int): String {
         val accessToken = anthropicAccessToken()
         val response = client.post("https://api.anthropic.com/v1/messages") {
             header("authorization", "Bearer $accessToken")
@@ -92,7 +92,7 @@ class AnthropicClaudeClient(private val config: ClaudeConfig) : ClaudeClient {
             setBody(
                 ClaudeRequest(
                     model = config.model,
-                    maxTokens = 1024,
+                    maxTokens = maxTokens,
                     system = systemPrompt,
                     messages = messages,
                 ),
