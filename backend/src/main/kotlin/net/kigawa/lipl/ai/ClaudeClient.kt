@@ -27,6 +27,9 @@ data class ClaudeMessage(val role: String, val content: String)
 
 interface ClaudeClient {
     suspend fun complete(systemPrompt: String, messages: List<ClaudeMessage>, maxTokens: Int = 1024): String
+
+    // ページ全体のHTML生成用。品質を優先し、interviewとは別モデル（Claude Sonnet）を使う。
+    suspend fun completeForGeneration(systemPrompt: String, messages: List<ClaudeMessage>, maxTokens: Int = 1024): String
 }
 
 @Serializable
@@ -83,7 +86,21 @@ class AnthropicClaudeClient(private val config: ClaudeConfig) : ClaudeClient {
     private val mutex = Mutex()
     @Volatile private var cachedToken: CachedToken? = null
 
-    override suspend fun complete(systemPrompt: String, messages: List<ClaudeMessage>, maxTokens: Int): String {
+    override suspend fun complete(systemPrompt: String, messages: List<ClaudeMessage>, maxTokens: Int): String =
+        callMessages(config.model, systemPrompt, messages, maxTokens)
+
+    override suspend fun completeForGeneration(
+        systemPrompt: String,
+        messages: List<ClaudeMessage>,
+        maxTokens: Int,
+    ): String = callMessages(config.generationModel, systemPrompt, messages, maxTokens)
+
+    private suspend fun callMessages(
+        model: String,
+        systemPrompt: String,
+        messages: List<ClaudeMessage>,
+        maxTokens: Int,
+    ): String {
         val accessToken = anthropicAccessToken()
         val response = client.post("https://api.anthropic.com/v1/messages") {
             header("authorization", "Bearer $accessToken")
@@ -91,7 +108,7 @@ class AnthropicClaudeClient(private val config: ClaudeConfig) : ClaudeClient {
             contentType(ContentType.Application.Json)
             setBody(
                 ClaudeRequest(
-                    model = config.model,
+                    model = model,
                     maxTokens = maxTokens,
                     system = systemPrompt,
                     messages = messages,
