@@ -20,6 +20,7 @@ import net.kigawa.lipl.ai.interviewRoutes
 import net.kigawa.lipl.ai.lpRoutes
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation as ClientContentNegotiation
 import io.ktor.serialization.kotlinx.json.json as clientJson
 import net.kigawa.lipl.auth.KeycloakConfig
@@ -123,6 +124,12 @@ fun Application.module(
         val authHttpClient = HttpClient(CIO) {
             install(ClientContentNegotiation) {
                 clientJson(Json { ignoreUnknownKeys = true; encodeDefaults = true })
+            }
+            // 明示的なタイムアウトがないと、Keycloakへの疎通が一時的に詰まった際に
+            // ブラウザ側が20秒近く待たされた末に生の500になる。短めに切って早く失敗させる。
+            install(HttpTimeout) {
+                connectTimeoutMillis = 5_000
+                requestTimeoutMillis = 10_000
             }
         }
         // 本番はmain()がSESSION_ENCRYPTION_KEYを起動時に必須チェックして渡す。
