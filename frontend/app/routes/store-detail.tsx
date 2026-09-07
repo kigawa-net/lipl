@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import {
   createMenuItem,
   deleteMenuItem,
@@ -29,7 +29,6 @@ import {
   SNS_PLATFORM_LABELS,
   SNS_PLATFORMS,
 } from "~/lib/labels";
-import { isAuthenticated } from "~/lib/oidc";
 
 function ChevronIcon() {
   return (
@@ -49,7 +48,6 @@ const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export default function StoreDetail() {
   const { storeId } = useParams();
-  const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItemResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,10 +99,6 @@ export default function StoreDetail() {
   const numericStoreId = Number(storeId);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login", { replace: true });
-      return;
-    }
     getStore(numericStoreId)
       .then((s) => {
         setStoreName(s.name);
@@ -138,7 +132,7 @@ export default function StoreDetail() {
         setKaftBaseUrl(baseUrl);
       })
       .catch((e: Error) => setPhotoError(e.message));
-  }, [numericStoreId, navigate]);
+  }, [numericStoreId]);
 
   function handleCategoryChange(category: BusinessCategory) {
     setBusinessCategory(category);

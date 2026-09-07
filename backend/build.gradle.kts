@@ -43,6 +43,7 @@ dependencies {
     implementation("com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20240325.1")
 
     testImplementation("io.ktor:ktor-server-test-host")
+    testImplementation("io.ktor:ktor-client-mock")
     testImplementation(kotlin("test"))
     testImplementation("com.h2database:h2:2.4.240")
 }

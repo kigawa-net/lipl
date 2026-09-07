@@ -18,9 +18,19 @@ import net.kigawa.lipl.ai.LpRepository
 import net.kigawa.lipl.ai.claudeConfigFromEnv
 import net.kigawa.lipl.ai.interviewRoutes
 import net.kigawa.lipl.ai.lpRoutes
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation as ClientContentNegotiation
+import io.ktor.serialization.kotlinx.json.json as clientJson
 import net.kigawa.lipl.auth.KeycloakConfig
+import net.kigawa.lipl.auth.SessionAuth
+import net.kigawa.lipl.auth.SessionCookieCodec
+import net.kigawa.lipl.auth.authRoutes
+import net.kigawa.lipl.auth.buildJwkProvider
 import net.kigawa.lipl.auth.configureKeycloakAuth
 import net.kigawa.lipl.auth.keycloakConfigFromEnv
+import net.kigawa.lipl.auth.sessionEncryptionKeyFromEnv
+import kotlinx.serialization.json.Json
 import net.kigawa.lipl.db.connectDatabase
 import net.kigawa.lipl.db.createDataSource
 import net.kigawa.lipl.db.dbConfigFromEnv
@@ -53,6 +63,7 @@ fun main() {
     val menuItemRepository = MenuItemRepository()
     val photoRepository = PhotoRepository()
     val keycloakConfig = keycloakConfigFromEnv()
+    val sessionEncryptionKey = sessionEncryptionKeyFromEnv()
     val kaftConfig = kaftConfigFromEnv()
     val kaftClient = KaftClient(kaftConfig)
     val claudeClient: ClaudeClient = AnthropicClaudeClient(claudeConfigFromEnv())
@@ -66,6 +77,7 @@ fun main() {
             menuItemRepository = menuItemRepository,
             photoRepository = photoRepository,
             keycloakConfig = keycloakConfig,
+            sessionEncryptionKey = sessionEncryptionKey,
             kaftClient = kaftClient,
             kaftConfig = kaftConfig,
             interviewRepository = interviewRepository,
@@ -82,6 +94,7 @@ fun Application.module(
     menuItemRepository: MenuItemRepository? = null,
     photoRepository: PhotoRepository? = null,
     keycloakConfig: KeycloakConfig? = null,
+    sessionEncryptionKey: ByteArray? = null,
     kaftClient: KaftClient? = null,
     kaftConfig: KaftConfig? = null,
     interviewRepository: InterviewRepository? = null,
@@ -106,7 +119,18 @@ fun Application.module(
     healthRoutes()
 
     if (keycloakConfig != null) {
-        configureKeycloakAuth(keycloakConfig)
+        val jwkProvider = buildJwkProvider(keycloakConfig)
+        val authHttpClient = HttpClient(CIO) {
+            install(ClientContentNegotiation) {
+                clientJson(Json { ignoreUnknownKeys = true; encodeDefaults = true })
+            }
+        }
+        // 本番はmain()がSESSION_ENCRYPTION_KEYを起動時に必須チェックして渡す。
+        // テストなどsessionEncryptionKeyを渡さないmodule()呼び出しでのみダミー鍵を使う。
+        val sessionKey = sessionEncryptionKey ?: ByteArray(32)
+        val sessionAuth = SessionAuth(keycloakConfig, jwkProvider, authHttpClient, SessionCookieCodec(sessionKey))
+        configureKeycloakAuth(sessionAuth)
+        routing { authRoutes(keycloakConfig, sessionAuth, authHttpClient) }
     }
     if (storeRepository != null) {
         routing { storeRoutes(storeRepository) }

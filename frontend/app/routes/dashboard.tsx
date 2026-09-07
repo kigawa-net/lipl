@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
 import {
   deleteStore,
   getAiUsage,
@@ -10,10 +9,8 @@ import {
   type StoreResponse,
 } from "~/lib/api";
 import { BUSINESS_CATEGORY_LABELS, OPERATION_TYPE_LABELS } from "~/lib/labels";
-import { isAuthenticated } from "~/lib/oidc";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const [stores, setStores] = useState<StoreResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,10 +23,6 @@ export default function Dashboard() {
   const [aiUsageError, setAiUsageError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login", { replace: true });
-      return;
-    }
     listStores()
       .then(setStores)
       .catch((e: Error) => setError(e.message))
@@ -50,7 +43,7 @@ export default function Dashboard() {
       .catch(() => {
         // デバッグ設定の取得失敗は無視する（本番相当の環境では未設定のため常に失敗し得る）
       });
-  }, [navigate]);
+  }, []);
 
   async function handleSetAiUsage(e: React.FormEvent) {
     e.preventDefault();
