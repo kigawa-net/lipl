@@ -39,6 +39,24 @@ class HtmlSanitizerTest {
     }
 
     @Test
+    fun `keeps a tel link so the call-to-reserve button works`() {
+        val raw = """<a href="tel:0312345678">今すぐ電話で予約</a>"""
+
+        val sanitized = sanitizeGeneratedHtml(raw)
+
+        assertEquals("""<a href="tel:0312345678">今すぐ電話で予約</a>""", sanitized)
+    }
+
+    @Test
+    fun `still keeps http and https links and strips javascript links`() {
+        assertEquals(
+            """<a href="https://example.com">リンク</a>""",
+            sanitizeGeneratedHtml("""<a href="https://example.com">リンク</a>"""),
+        )
+        assertEquals("危険", sanitizeGeneratedHtml("""<a href="javascript:alert(1)">危険</a>"""))
+    }
+
+    @Test
     fun `still strips scripts and event handlers`() {
         val raw = """<div onclick="alert(1)"><script>alert(1)</script>本文</div>"""
 

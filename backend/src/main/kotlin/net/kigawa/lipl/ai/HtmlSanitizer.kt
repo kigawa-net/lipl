@@ -22,13 +22,22 @@ private val EXTRA_CSS_SCHEMA = CssSchema.withProperties(
     ),
 )
 
+// Sanitizers.LINKSはhref="tel:..."を許可しない（http/httpsのみ）ため、AIが生成した
+// 「今すぐ電話で予約」等のtelリンクのhrefだけが静かに剥ぎ取られ、ボタンが押せても
+// 何も起きなくなっていた。tel:を追加で許可したリンクポリシーに置き換える。
+private val LINKS_WITH_TEL = HtmlPolicyBuilder()
+    .allowUrlProtocols("http", "https", "tel")
+    .allowElements("a")
+    .allowAttributes("href").onElements("a")
+    .toFactory()
+
 // AIが生成した/オーナーが手動編集したページHTMLは、そのまま公開LPに埋め込んで
 // 表示するため（dangerouslySetInnerHTML相当）、script・イベントハンドラ・
 // 外部リソース読み込み等を厳格に除去する。OWASP Java HTML Sanitizerの
 // 定評あるビルトインポリシーを組み合わせ、独自要素はclass属性のみ追加で許可する。
 private val POLICY = Sanitizers.FORMATTING
     .and(Sanitizers.BLOCKS)
-    .and(Sanitizers.LINKS)
+    .and(LINKS_WITH_TEL)
     .and(Sanitizers.IMAGES)
     .and(
         HtmlPolicyBuilder()
