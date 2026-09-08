@@ -103,7 +103,7 @@ export default function LpEdit() {
       {error && <p className="mb-4 text-red-600 dark:text-red-400">{error}</p>}
 
       {published && (
-        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-stone-700 dark:bg-stone-900">
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-stone-600 dark:bg-stone-800">
           <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-400">
             公開中
           </span>
@@ -168,7 +168,7 @@ export default function LpEdit() {
                   title="LPプレビュー"
                   srcDoc={pageHtml}
                   sandbox=""
-                  className="h-96 w-full rounded-lg border border-gray-200 bg-white dark:border-stone-700"
+                  className="h-96 w-full rounded-lg border border-gray-200 bg-white dark:border-stone-600"
                 />
               </div>
 
@@ -206,7 +206,7 @@ export default function LpEdit() {
               type="button"
               onClick={handleGenerate}
               disabled={generating}
-              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-600"
+              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50 dark:border-stone-600 dark:text-stone-300 dark:hover:border-stone-600"
             >
               {generating ? "再生成・公開中..." : "AIで再生成して公開する"}
             </button>
