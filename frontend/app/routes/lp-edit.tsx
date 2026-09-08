@@ -9,6 +9,7 @@ import {
   updateLpContent,
   type LpContentResponse,
 } from "~/lib/api";
+import { HomeLink } from "~/components/HomeLink";
 
 export default function LpEdit() {
   const { storeId } = useParams();
@@ -91,9 +92,7 @@ export default function LpEdit() {
     <main className="mx-auto max-w-3xl p-8">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <a href="/" className="text-sm text-gray-400 underline hover:text-gray-600 dark:text-stone-500 dark:hover:text-stone-300">
-            Lipl
-          </a>
+          <HomeLink />
           <h1 className="text-2xl font-bold dark:text-stone-100">LP編集</h1>
         </div>
         <a href={`/stores/${storeId}`} className="text-sm text-gray-500 underline dark:text-stone-500">
