@@ -20,7 +20,7 @@ export default function Home() {
         3分で公式ページを公開。
       </p>
       <a
-        href="/dashboard"
+        href="/"
         className="rounded bg-amber-900 px-6 py-3 text-white transition-colors hover:bg-amber-800 dark:bg-amber-700 dark:hover:bg-amber-600"
       >
         はじめる

@@ -460,7 +460,7 @@ export default function StoreWizard() {
           公開ページを見る
         </a>
         <a
-          href="/dashboard"
+          href="/"
           className="text-sm text-amber-800 underline hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400"
         >
           ダッシュボードに戻る
@@ -478,7 +478,7 @@ export default function StoreWizard() {
           </a>
           <h1 className="text-2xl font-bold dark:text-stone-100">店舗を登録</h1>
         </div>
-        <a href="/dashboard" className="text-sm text-gray-500 underline dark:text-stone-500">
+        <a href="/" className="text-sm text-gray-500 underline dark:text-stone-500">
           あとで続ける
         </a>
       </div>
