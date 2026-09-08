@@ -491,7 +491,7 @@ export default function StoreWizard() {
                   ? "flex h-6 w-6 items-center justify-center rounded-full bg-amber-900 text-white dark:bg-amber-600"
                   : index < stepIndex
                     ? "flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400"
-                    : "flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-stone-700 dark:text-stone-500"
+                    : "flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-stone-600 dark:text-stone-500"
               }
             >
               {index + 1}
@@ -662,7 +662,7 @@ export default function StoreWizard() {
             <button
               type="button"
               onClick={goBack}
-              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 dark:border-stone-600 dark:text-stone-300 dark:hover:border-stone-600"
+              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 dark:border-stone-500 dark:text-stone-300 dark:hover:border-stone-500"
             >
               戻る
             </button>
@@ -705,7 +705,7 @@ export default function StoreWizard() {
               type="button"
               onClick={goBack}
               disabled={creating}
-              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50 dark:border-stone-600 dark:text-stone-300 dark:hover:border-stone-600"
+              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50 dark:border-stone-500 dark:text-stone-300 dark:hover:border-stone-500"
             >
               戻る
             </button>
@@ -736,14 +736,14 @@ export default function StoreWizard() {
                 const pickerOpen = menuPhotoPickerId === item.id;
                 const editing = editingMenuItemId === item.id;
                 return (
-                  <li key={item.id} className="rounded-lg border border-gray-200 p-3 dark:border-stone-600">
+                  <li key={item.id} className="rounded-lg border border-gray-200 p-3 dark:border-stone-500">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex min-w-0 flex-1 items-center gap-3">
                         <button
                           type="button"
                           onClick={() => setMenuPhotoPickerId(pickerOpen ? null : item.id)}
                           disabled={photos.length === 0 || menuPhotoSavingId === item.id}
-                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded border border-dashed text-[0.6rem] text-gray-400 transition-colors hover:border-amber-500 hover:text-amber-700 disabled:opacity-50 dark:border-stone-600 dark:text-stone-600 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded border border-dashed text-[0.6rem] text-gray-400 transition-colors hover:border-amber-500 hover:text-amber-700 disabled:opacity-50 dark:border-stone-500 dark:text-stone-600 dark:hover:border-amber-600 dark:hover:text-amber-500"
                         >
                           {itemPhoto && kaftBaseUrl ? (
                             <img
@@ -804,7 +804,7 @@ export default function StoreWizard() {
                                 type="button"
                                 onClick={cancelEditMenuItem}
                                 disabled={editMenuSaving}
-                                className="rounded border px-3 py-1 text-xs dark:border-stone-600 dark:text-stone-300"
+                                className="rounded border px-3 py-1 text-xs dark:border-stone-500 dark:text-stone-300"
                               >
                                 キャンセル
                               </button>
@@ -832,7 +832,7 @@ export default function StoreWizard() {
                             type="button"
                             onClick={() => handleMoveMenuItem(index, -1)}
                             disabled={index === 0}
-                            className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 dark:border-stone-600 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                            className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 dark:border-stone-500 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
                           >
                             ↑
                           </button>
@@ -840,21 +840,21 @@ export default function StoreWizard() {
                             type="button"
                             onClick={() => handleMoveMenuItem(index, 1)}
                             disabled={index === menuItems.length - 1}
-                            className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 dark:border-stone-600 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                            className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 dark:border-stone-500 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
                           >
                             ↓
                           </button>
                           <button
                             type="button"
                             onClick={() => startEditMenuItem(item)}
-                            className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 dark:border-stone-600 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                            className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 dark:border-stone-500 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
                           >
                             編集
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteMenuItem(item.id)}
-                            className="rounded border px-2 py-1 text-xs text-red-600 dark:border-stone-600 dark:text-red-400"
+                            className="rounded border px-2 py-1 text-xs text-red-600 dark:border-stone-500 dark:text-red-400"
                           >
                             削除
                           </button>
@@ -862,11 +862,11 @@ export default function StoreWizard() {
                       )}
                     </div>
                     {pickerOpen && kaftBaseUrl && (
-                      <div className="mt-3 flex flex-wrap gap-2 border-t pt-3 dark:border-stone-600">
+                      <div className="mt-3 flex flex-wrap gap-2 border-t pt-3 dark:border-stone-500">
                         <button
                           type="button"
                           onClick={() => handleMenuPhotoPick(item.id, null)}
-                          className="flex h-12 w-12 items-center justify-center rounded border border-dashed text-[0.55rem] text-gray-400 transition-colors hover:border-amber-500 hover:text-amber-700 dark:border-stone-600 dark:text-stone-600 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                          className="flex h-12 w-12 items-center justify-center rounded border border-dashed text-[0.55rem] text-gray-400 transition-colors hover:border-amber-500 hover:text-amber-700 dark:border-stone-500 dark:text-stone-600 dark:hover:border-amber-600 dark:hover:text-amber-500"
                         >
                           写真なし
                         </button>
@@ -900,7 +900,7 @@ export default function StoreWizard() {
 
             <form
               onSubmit={handleAddMenuItem}
-              className="space-y-3 border-t border-amber-100 pt-5 dark:border-stone-700"
+              className="space-y-3 border-t border-amber-100 pt-5 dark:border-stone-600"
             >
               <div className="field">
                 <label className="field-label">品名</label>
@@ -976,7 +976,7 @@ export default function StoreWizard() {
                     <img
                       src={photoUrl(kaftBaseUrl, photo)}
                       alt={photo.filename}
-                      className="aspect-square w-full rounded border object-cover dark:border-stone-600"
+                      className="aspect-square w-full rounded border object-cover dark:border-stone-500"
                     />
                   )}
                   <div className="flex items-center justify-center gap-1">
@@ -984,7 +984,7 @@ export default function StoreWizard() {
                       type="button"
                       onClick={() => handleMovePhoto(index, -1)}
                       disabled={index === 0}
-                      className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 dark:border-stone-600 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                      className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 dark:border-stone-500 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
                     >
                       ↑
                     </button>
@@ -992,14 +992,14 @@ export default function StoreWizard() {
                       type="button"
                       onClick={() => handleMovePhoto(index, 1)}
                       disabled={index === photos.length - 1}
-                      className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 dark:border-stone-600 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                      className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 dark:border-stone-500 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
                     >
                       ↓
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDeletePhoto(photo.id)}
-                      className="rounded border px-2 py-1 text-xs text-red-600 dark:border-stone-600 dark:text-red-400"
+                      className="rounded border px-2 py-1 text-xs text-red-600 dark:border-stone-500 dark:text-red-400"
                     >
                       削除
                     </button>
@@ -1045,21 +1045,21 @@ export default function StoreWizard() {
             <p className="field-hint mb-5">内容を確認して、問題なければ公開しましょう。公開後もいつでも編集できます。</p>
 
             <dl className="space-y-3 text-sm">
-              <div className="flex justify-between border-b border-amber-100 pb-2 dark:border-stone-700">
+              <div className="flex justify-between border-b border-amber-100 pb-2 dark:border-stone-600">
                 <dt className="text-gray-500 dark:text-stone-400">店名</dt>
                 <dd className="font-semibold dark:text-stone-100">{name}</dd>
               </div>
-              <div className="flex justify-between border-b border-amber-100 pb-2 dark:border-stone-700">
+              <div className="flex justify-between border-b border-amber-100 pb-2 dark:border-stone-600">
                 <dt className="text-gray-500 dark:text-stone-400">業種</dt>
                 <dd className="dark:text-stone-200">{BUSINESS_CATEGORY_LABELS[businessCategory]}</dd>
               </div>
-              <div className="flex justify-between border-b border-amber-100 pb-2 dark:border-stone-700">
+              <div className="flex justify-between border-b border-amber-100 pb-2 dark:border-stone-600">
                 <dt className="text-gray-500 dark:text-stone-400">
                   {operationType === "FIXED" ? "所在地" : "出店エリア"}
                 </dt>
                 <dd className="dark:text-stone-200">{operationType === "FIXED" ? address : businessArea}</dd>
               </div>
-              <div className="flex justify-between border-b border-amber-100 pb-2 dark:border-stone-700">
+              <div className="flex justify-between border-b border-amber-100 pb-2 dark:border-stone-600">
                 <dt className="text-gray-500 dark:text-stone-400">メニュー</dt>
                 <dd className="dark:text-stone-200">{menuItems.length}品</dd>
               </div>
@@ -1077,7 +1077,7 @@ export default function StoreWizard() {
               type="button"
               onClick={goBack}
               disabled={publishing}
-              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50 dark:border-stone-600 dark:text-stone-300 dark:hover:border-stone-600"
+              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50 dark:border-stone-500 dark:text-stone-300 dark:hover:border-stone-500"
             >
               戻る
             </button>

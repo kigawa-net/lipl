@@ -12,7 +12,7 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-gradient-to-b from-amber-50 to-white p-8 text-center dark:from-stone-800 dark:to-stone-900">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-gradient-to-b from-amber-50 to-white p-8 text-center dark:from-stone-700 dark:to-stone-800">
       <h1 className="text-3xl font-bold text-amber-900 dark:text-amber-500">Lipl</h1>
       <p className="text-lg text-gray-600 dark:text-stone-400">
         お店の情報を入力するだけ。
