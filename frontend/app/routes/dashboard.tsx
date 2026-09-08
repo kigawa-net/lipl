@@ -87,7 +87,12 @@ export default function Dashboard() {
   return (
     <main className="mx-auto max-w-2xl p-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold dark:text-stone-100">店舗一覧</h1>
+        <div className="flex items-center gap-3">
+          <a href="/" className="text-sm text-gray-400 underline hover:text-gray-600 dark:text-stone-500 dark:hover:text-stone-300">
+            Lipl
+          </a>
+          <h1 className="text-2xl font-bold dark:text-stone-100">店舗一覧</h1>
+        </div>
         <a href="/logout" className="text-sm text-gray-500 underline dark:text-stone-500">
           ログアウト
         </a>
