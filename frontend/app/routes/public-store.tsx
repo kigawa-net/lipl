@@ -17,7 +17,7 @@ export default function PublicStore() {
 
   if (error) {
     return (
-      <main className="flex min-h-screen items-center justify-center p-8 text-center dark:bg-stone-950">
+      <main className="flex min-h-screen items-center justify-center p-8 text-center dark:bg-stone-900">
         <p className="text-red-600 dark:text-red-400">{error}</p>
       </main>
     );
@@ -25,7 +25,7 @@ export default function PublicStore() {
 
   if (store === undefined) {
     return (
-      <main className="flex min-h-screen items-center justify-center dark:bg-stone-950">
+      <main className="flex min-h-screen items-center justify-center dark:bg-stone-900">
         <p className="text-gray-400 dark:text-stone-500">読み込み中...</p>
       </main>
     );
@@ -33,7 +33,7 @@ export default function PublicStore() {
 
   if (store === null) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-3 p-8 text-center dark:bg-stone-950">
+      <main className="flex min-h-screen flex-col items-center justify-center gap-3 p-8 text-center dark:bg-stone-900">
         <h1 className="text-xl font-bold text-gray-700 dark:text-stone-200">ページが見つかりません</h1>
         <p className="text-sm text-gray-500 dark:text-stone-500">
           このページは非公開になっているか、存在しません。
@@ -51,7 +51,7 @@ export default function PublicStore() {
   }
 
   return (
-    <main className="min-h-screen bg-amber-50/40 dark:bg-stone-950">
+    <main className="min-h-screen bg-amber-50/40 dark:bg-stone-900">
       {store.photos.length > 0 && (
         <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
           {store.photos.map((photo) => (
@@ -107,7 +107,7 @@ export default function PublicStore() {
                 href={link.url}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-50 dark:border-amber-800 dark:bg-stone-900 dark:text-amber-400 dark:hover:bg-stone-800"
+                className="rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-50 dark:border-amber-800 dark:bg-stone-800 dark:text-amber-400 dark:hover:bg-stone-700"
               >
                 {SNS_PLATFORM_LABELS[link.platform]}
               </a>
@@ -124,7 +124,7 @@ export default function PublicStore() {
                 return (
                 <li
                   key={item.id}
-                  className="flex gap-4 rounded-lg border border-amber-100 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
+                  className="flex gap-4 rounded-lg border border-amber-100 bg-white p-4 dark:border-stone-700 dark:bg-stone-800"
                 >
                   {itemPhoto && (
                     <img

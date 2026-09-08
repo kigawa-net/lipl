@@ -103,7 +103,7 @@ export default function Dashboard() {
         {stores.map((store) => (
           <li
             key={store.id}
-            className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-stone-800 dark:bg-stone-900 dark:shadow-none"
+            className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-stone-700 dark:bg-stone-800 dark:shadow-none"
           >
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-semibold dark:text-stone-100">{store.name}</span>
@@ -116,7 +116,7 @@ export default function Dashboard() {
                   公開中
                 </span>
               ) : (
-                <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500 dark:bg-stone-800 dark:text-stone-400">
+                <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500 dark:bg-stone-700 dark:text-stone-400">
                   未公開
                 </span>
               )}
