@@ -130,7 +130,9 @@ fun Route.authRoutes(config: KeycloakConfig, sessionAuth: SessionAuth, client: H
 
     get("/api/auth/logout") {
         sessionAuth.clearCookie(call)
-        val postLogoutRedirectUri = "${call.externalOrigin()}/"
+        // "/"はダッシュボード（要ログイン）のため、ログアウト直後にそこへ戻すと
+        // 401→/loginへ即座に押し戻されてしまう。ログアウト後はマーケティングページ（/lp）へ。
+        val postLogoutRedirectUri = "${call.externalOrigin()}/lp"
         val logoutUrl = buildString {
             append(config.endSessionEndpoint)
             append("?client_id=").append(encodeParam(config.backendClientId))

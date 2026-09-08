@@ -349,7 +349,7 @@ export default function StoreDetail() {
           </a>
           <h1 className="text-2xl font-bold dark:text-stone-100">店舗管理</h1>
         </div>
-        <a href="/dashboard" className="text-sm text-gray-500 underline dark:text-stone-500">
+        <a href="/" className="text-sm text-gray-500 underline dark:text-stone-500">
           店舗一覧に戻る
         </a>
       </div>
