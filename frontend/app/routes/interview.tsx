@@ -94,7 +94,7 @@ export default function Interview() {
             質問回数の上限に達しました。この内容をもとにLPを生成しましょう。
           </p>
           <a
-            href={`/stores/${storeId}/lp`}
+            href={`/stores/${storeId}#lp`}
             className="inline-block rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 dark:bg-amber-700 dark:hover:bg-amber-600"
           >
             LPを生成する

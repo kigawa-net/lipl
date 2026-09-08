@@ -4,7 +4,10 @@ import {
   createMenuItem,
   deleteMenuItem,
   deletePhoto,
+  generateLpContent,
+  getInterviewState,
   getKaftBaseUrl,
+  getLpContent,
   getStore,
   listMenuItems,
   listPhotos,
@@ -13,10 +16,12 @@ import {
   reorderPhotos,
   setMenuItemPhoto,
   setStorePublished,
+  updateLpContent,
   updateMenuItem,
   updateStore,
   uploadPhoto,
   type BusinessCategory,
+  type LpContentResponse,
   type MenuItemResponse,
   type OperationType,
   type PhotoResponse,
@@ -97,6 +102,16 @@ export default function StoreDetail() {
   const [editDescription, setEditDescription] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
+  const [lpContent, setLpContent] = useState<LpContentResponse | null>(null);
+  const [hasInterview, setHasInterview] = useState(false);
+  const [lpLoading, setLpLoading] = useState(true);
+  const [lpError, setLpError] = useState<string | null>(null);
+  const [lpSaved, setLpSaved] = useState(false);
+  const [lpGenerating, setLpGenerating] = useState(false);
+  const [lpSaving, setLpSaving] = useState(false);
+  const [catchphrase, setCatchphrase] = useState("");
+  const [pageHtml, setPageHtml] = useState("");
+
   const numericStoreId = Number(storeId);
 
   useEffect(() => {
@@ -133,6 +148,16 @@ export default function StoreDetail() {
         setKaftBaseUrl(baseUrl);
       })
       .catch((e: Error) => setPhotoError(e.message));
+
+    Promise.all([getLpContent(numericStoreId), getInterviewState(numericStoreId)])
+      .then(([lpContentResult, interviewState]) => {
+        setLpContent(lpContentResult);
+        setCatchphrase(lpContentResult?.catchphrase ?? "");
+        setPageHtml(lpContentResult?.pageHtml ?? "");
+        setHasInterview(interviewState.messages.length > 0);
+      })
+      .catch((e: Error) => setLpError(e.message))
+      .finally(() => setLpLoading(false));
   }, [numericStoreId]);
 
   function handleCategoryChange(category: BusinessCategory) {
@@ -150,6 +175,41 @@ export default function StoreDetail() {
       setStoreError((e as Error).message);
     } finally {
       setPublishSaving(false);
+    }
+  }
+
+  // 生成したLPはそのまま公開する（生成→公開まで一度の操作で完結させる）。
+  async function handleGenerateLp() {
+    setLpGenerating(true);
+    setLpError(null);
+    try {
+      const generated = await generateLpContent(numericStoreId);
+      setLpContent(generated);
+      setCatchphrase(generated.catchphrase);
+      setPageHtml(generated.pageHtml);
+      const store = await setStorePublished(numericStoreId, true);
+      setPublished(store.published);
+    } catch (e) {
+      setLpError((e as Error).message);
+    } finally {
+      setLpGenerating(false);
+    }
+  }
+
+  async function handleSaveLp(e: React.FormEvent) {
+    e.preventDefault();
+    setLpSaving(true);
+    setLpError(null);
+    setLpSaved(false);
+    try {
+      const updated = await updateLpContent(numericStoreId, { catchphrase, pageHtml });
+      setLpContent(updated);
+      setPageHtml(updated.pageHtml);
+      setLpSaved(true);
+    } catch (e) {
+      setLpError((e as Error).message);
+    } finally {
+      setLpSaving(false);
     }
   }
 
@@ -333,7 +393,7 @@ export default function StoreDetail() {
     }
   }
 
-  if (loading || storeLoading) {
+  if (loading || storeLoading || lpLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <p className="dark:text-stone-300">読み込み中...</p>
@@ -391,7 +451,7 @@ export default function StoreDetail() {
           AIヒアリング
         </a>
         <a
-          href={`/stores/${storeId}/lp`}
+          href="#lp"
           className="rounded-lg border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-50 dark:border-stone-500 dark:bg-stone-700 dark:text-amber-500 dark:hover:bg-stone-600"
         >
           LP編集
@@ -849,6 +909,106 @@ export default function StoreDetail() {
           {submitting ? "追加中..." : "追加する"}
         </button>
       </form>
+
+      <h2 id="lp" className="mt-8 mb-4 scroll-mt-6 text-xl font-bold dark:text-stone-100">
+        LP
+      </h2>
+      {lpError && <p className="mb-4 text-red-600 dark:text-red-400">{lpError}</p>}
+      {lpContent === null ? (
+        <div className="form-card">
+          <p className="mb-4 text-sm text-gray-600 dark:text-stone-300">
+            まだLPが生成されていません。
+            {hasInterview
+              ? "下のボタンからAIヒアリングの内容・メニュー・写真をもとにページ全体のHTMLを生成し、そのまま公開できます。"
+              : "先にAIヒアリングでお店の魅力を教えてください。"}
+          </p>
+          {hasInterview ? (
+            <button
+              type="button"
+              onClick={handleGenerateLp}
+              disabled={lpGenerating}
+              className="rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
+            >
+              {lpGenerating ? "生成・公開中..." : "LPを生成して公開する"}
+            </button>
+          ) : (
+            <a
+              href={`/stores/${storeId}/interview`}
+              className="inline-block rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 dark:bg-amber-700 dark:hover:bg-amber-600"
+            >
+              AIヒアリングを開始する
+            </a>
+          )}
+        </div>
+      ) : (
+        <form onSubmit={handleSaveLp} className="form-card">
+          <div className="form-section">
+            <div className="space-y-5">
+              <div className="field">
+                <label className="field-label">
+                  <span>キャッチコピー</span>
+                  <span className="field-count">{catchphrase.length}/200</span>
+                </label>
+                <input
+                  required
+                  maxLength={200}
+                  value={catchphrase}
+                  onChange={(e) => setCatchphrase(e.target.value)}
+                  className="field-input"
+                />
+              </div>
+
+              <div className="field">
+                <label className="field-label">プレビュー</label>
+                <iframe
+                  title="LPプレビュー"
+                  srcDoc={pageHtml}
+                  sandbox=""
+                  className="h-96 w-full rounded-lg border border-gray-200 bg-white dark:border-stone-500"
+                />
+              </div>
+
+              <div className="field">
+                <label className="field-label">
+                  <span>ページHTML</span>
+                  <span className="field-count">{pageHtml.length}/20000</span>
+                </label>
+                <textarea
+                  required
+                  rows={12}
+                  maxLength={20000}
+                  value={pageHtml}
+                  onChange={(e) => setPageHtml(e.target.value)}
+                  className="field-textarea field-input font-mono text-xs"
+                />
+                <p className="field-hint mt-1">
+                  AIが生成したHTMLです。直接編集して保存できます（script・外部リソースは保存時に除去されます）。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {lpSaved && !lpError && <p className="mt-4 text-sm text-amber-800 dark:text-amber-500">保存しました</p>}
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="submit"
+              disabled={lpSaving}
+              className="rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
+            >
+              {lpSaving ? "保存中..." : "保存する"}
+            </button>
+            <button
+              type="button"
+              onClick={handleGenerateLp}
+              disabled={lpGenerating}
+              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50 dark:border-stone-400 dark:text-stone-300 dark:hover:border-stone-400"
+            >
+              {lpGenerating ? "再生成・公開中..." : "AIで再生成して公開する"}
+            </button>
+          </div>
+        </form>
+      )}
     </main>
   );
 }
