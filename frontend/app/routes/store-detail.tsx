@@ -353,13 +353,13 @@ export default function StoreDetail() {
         </a>
       </div>
 
-      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-stone-600 dark:bg-stone-800">
+      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-stone-500 dark:bg-stone-700">
         {published ? (
           <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-400">
             公開中
           </span>
         ) : (
-          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500 dark:bg-stone-700 dark:text-stone-400">
+          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500 dark:bg-stone-600 dark:text-stone-400">
             未公開
           </span>
         )}
@@ -386,13 +386,13 @@ export default function StoreDetail() {
       <div className="mb-8 flex gap-3">
         <a
           href={`/stores/${storeId}/interview`}
-          className="rounded-lg border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-50 dark:border-stone-600 dark:bg-stone-800 dark:text-amber-500 dark:hover:bg-stone-700"
+          className="rounded-lg border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-50 dark:border-stone-500 dark:bg-stone-700 dark:text-amber-500 dark:hover:bg-stone-600"
         >
           AIヒアリング
         </a>
         <a
           href={`/stores/${storeId}/lp`}
-          className="rounded-lg border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-50 dark:border-stone-600 dark:bg-stone-800 dark:text-amber-500 dark:hover:bg-stone-700"
+          className="rounded-lg border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-50 dark:border-stone-500 dark:bg-stone-700 dark:text-amber-500 dark:hover:bg-stone-600"
         >
           LP編集
         </a>
@@ -567,7 +567,7 @@ export default function StoreDetail() {
               <img
                 src={photoUrl(kaftBaseUrl, photo)}
                 alt={photo.filename}
-                className="aspect-square w-full rounded border object-cover dark:border-stone-600"
+                className="aspect-square w-full rounded border object-cover dark:border-stone-500"
               />
             )}
             <div className="flex items-center justify-center gap-1">
@@ -575,7 +575,7 @@ export default function StoreDetail() {
                 type="button"
                 onClick={() => handlePhotoMove(index, -1)}
                 disabled={index === 0}
-                className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-600 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-500 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
               >
                 ↑
               </button>
@@ -583,14 +583,14 @@ export default function StoreDetail() {
                 type="button"
                 onClick={() => handlePhotoMove(index, 1)}
                 disabled={index === photos.length - 1}
-                className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-600 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                className="rounded border px-2 py-1 text-xs transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-500 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
               >
                 ↓
               </button>
               <button
                 type="button"
                 onClick={() => handlePhotoDelete(photo.id)}
-                className="rounded border px-2 py-1 text-xs text-red-600 dark:border-stone-600 dark:text-red-400"
+                className="rounded border px-2 py-1 text-xs text-red-600 dark:border-stone-500 dark:text-red-400"
               >
                 削除
               </button>
@@ -625,14 +625,14 @@ export default function StoreDetail() {
           const pickerOpen = menuPhotoPickerId === item.id;
           const editing = editingMenuItemId === item.id;
           return (
-            <li key={item.id} className="rounded border p-3 dark:border-stone-600">
+            <li key={item.id} className="rounded border p-3 dark:border-stone-500">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setMenuPhotoPickerId(pickerOpen ? null : item.id)}
                     disabled={photos.length === 0 || menuPhotoSavingId === item.id}
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded border border-dashed text-[0.65rem] text-gray-400 transition-colors hover:border-amber-500 hover:text-amber-700 disabled:opacity-50 dark:border-stone-600 dark:text-stone-600 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded border border-dashed text-[0.65rem] text-gray-400 transition-colors hover:border-amber-500 hover:text-amber-700 disabled:opacity-50 dark:border-stone-500 dark:text-stone-600 dark:hover:border-amber-600 dark:hover:text-amber-500"
                   >
                     {itemPhoto && kaftBaseUrl ? (
                       <img
@@ -693,7 +693,7 @@ export default function StoreDetail() {
                           type="button"
                           onClick={cancelEditMenuItem}
                           disabled={editSaving}
-                          className="rounded border px-3 py-1 text-xs dark:border-stone-600 dark:text-stone-300"
+                          className="rounded border px-3 py-1 text-xs dark:border-stone-500 dark:text-stone-300"
                         >
                           キャンセル
                         </button>
@@ -722,7 +722,7 @@ export default function StoreDetail() {
                       type="button"
                       onClick={() => handleMove(index, -1)}
                       disabled={index === 0}
-                      className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-600 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                      className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-500 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
                     >
                       ↑
                     </button>
@@ -730,21 +730,21 @@ export default function StoreDetail() {
                       type="button"
                       onClick={() => handleMove(index, 1)}
                       disabled={index === menuItems.length - 1}
-                      className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-600 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                      className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 disabled:opacity-30 disabled:hover:border-inherit disabled:hover:text-inherit dark:border-stone-500 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
                     >
                       ↓
                     </button>
                     <button
                       type="button"
                       onClick={() => startEditMenuItem(item)}
-                      className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 dark:border-stone-600 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                      className="rounded border px-2 py-1 text-sm transition-colors hover:border-amber-700 hover:text-amber-800 dark:border-stone-500 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:text-amber-500"
                     >
                       編集
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(item.id)}
-                      className="rounded border px-2 py-1 text-sm text-red-600 dark:border-stone-600 dark:text-red-400"
+                      className="rounded border px-2 py-1 text-sm text-red-600 dark:border-stone-500 dark:text-red-400"
                     >
                       削除
                     </button>
@@ -752,11 +752,11 @@ export default function StoreDetail() {
                 )}
               </div>
               {pickerOpen && kaftBaseUrl && (
-                <div className="mt-3 flex flex-wrap gap-2 border-t pt-3 dark:border-stone-600">
+                <div className="mt-3 flex flex-wrap gap-2 border-t pt-3 dark:border-stone-500">
                   <button
                     type="button"
                     onClick={() => handleMenuPhotoPick(item.id, null)}
-                    className="flex h-14 w-14 items-center justify-center rounded border border-dashed text-[0.6rem] text-gray-400 transition-colors hover:border-amber-500 hover:text-amber-700 dark:border-stone-600 dark:text-stone-600 dark:hover:border-amber-600 dark:hover:text-amber-500"
+                    className="flex h-14 w-14 items-center justify-center rounded border border-dashed text-[0.6rem] text-gray-400 transition-colors hover:border-amber-500 hover:text-amber-700 dark:border-stone-500 dark:text-stone-600 dark:hover:border-amber-600 dark:hover:text-amber-500"
                   >
                     写真なし
                   </button>

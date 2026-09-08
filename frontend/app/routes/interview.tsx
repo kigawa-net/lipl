@@ -78,7 +78,7 @@ export default function Interview() {
             <div
               className={
                 message.role === "assistant"
-                  ? "max-w-[80%] rounded-lg rounded-bl-none bg-amber-50 px-4 py-2 text-sm text-gray-800 dark:bg-stone-700 dark:text-stone-100"
+                  ? "max-w-[80%] rounded-lg rounded-bl-none bg-amber-50 px-4 py-2 text-sm text-gray-800 dark:bg-stone-600 dark:text-stone-100"
                   : "max-w-[80%] rounded-lg rounded-br-none bg-amber-900 px-4 py-2 text-sm text-white dark:bg-amber-700"
               }
             >
@@ -89,7 +89,7 @@ export default function Interview() {
       </div>
 
       {state?.limitReached ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-stone-600 dark:bg-stone-800">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-stone-500 dark:bg-stone-700">
           <p className="mb-3 text-gray-700 dark:text-stone-300">
             質問回数の上限に達しました。この内容をもとにLPを生成しましょう。
           </p>
