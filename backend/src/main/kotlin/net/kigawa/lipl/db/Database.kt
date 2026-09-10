@@ -12,6 +12,7 @@ data class DbConfig(
     val name: String,
     val user: String,
     val password: String,
+    val poolSize: Int,
 ) {
     val jdbcUrl: String = "jdbc:mariadb://$host:$port/$name"
 }
@@ -22,6 +23,10 @@ fun dbConfigFromEnv(): DbConfig = DbConfig(
     name = System.getenv("DB_NAME") ?: error("環境変数 DB_NAME が設定されていません"),
     user = System.getenv("DB_USER") ?: error("環境変数 DB_USER が設定されていません"),
     password = System.getenv("DB_PASSWORD") ?: error("環境変数 DB_PASSWORD が設定されていません"),
+    // DBユーザーのmax_user_connectionsは全レプリカ合計で共有される。レプリカ数を
+    // 増やす場合は、(レプリカ数×このプールサイズ)がmax_user_connectionsを
+    // 超えないよう、各環境のマニフェストでDB_POOL_SIZEを調整すること。
+    poolSize = (System.getenv("DB_POOL_SIZE") ?: "10").toInt(),
 )
 
 fun createDataSource(config: DbConfig): HikariDataSource {
@@ -30,7 +35,7 @@ fun createDataSource(config: DbConfig): HikariDataSource {
         username = config.user
         password = config.password
         driverClassName = "org.mariadb.jdbc.Driver"
-        maximumPoolSize = 10
+        maximumPoolSize = config.poolSize
     }
     return HikariDataSource(hikariConfig)
 }
