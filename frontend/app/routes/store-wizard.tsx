@@ -144,6 +144,8 @@ export default function StoreWizard() {
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [published, setPublished] = useState(false);
+  // 入力中に別タブ等でこの店舗が削除された場合（404）を検知し、専用の案内を出す。
+  const [storeMissing, setStoreMissing] = useState(false);
 
   const [restored, setRestored] = useState(false);
 
@@ -436,10 +438,22 @@ export default function StoreWizard() {
       clearDraft();
       setPublished(true);
     } catch (e) {
-      setPublishError((e as Error).message);
+      const message = (e as Error).message;
+      if (message.includes("404")) {
+        // この店舗はすでに削除されている（別タブでの削除操作など）。
+        // 古い下書きのまま公開を続けようとしても解決しないため、やり直しを促す。
+        setStoreMissing(true);
+      } else {
+        setPublishError(message);
+      }
     } finally {
       setPublishing(false);
     }
+  }
+
+  function handleStartOver() {
+    clearDraft();
+    window.location.href = "/stores/new";
   }
 
   if (published && slug) {
@@ -1070,26 +1084,43 @@ export default function StoreWizard() {
             </dl>
 
             {publishError && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{publishError}</p>}
+            {storeMissing && (
+              <p className="mt-4 text-sm text-red-600 dark:text-red-400">
+                この店舗はすでに削除されているため、公開できません。お手数ですが、はじめからやり直してください。
+              </p>
+            )}
           </div>
 
-          <div className="mt-7 flex gap-3">
-            <button
-              type="button"
-              onClick={goBack}
-              disabled={publishing}
-              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50 dark:border-stone-500 dark:text-stone-300 dark:hover:border-stone-500"
-            >
-              戻る
-            </button>
-            <button
-              type="button"
-              onClick={handlePublish}
-              disabled={publishing}
-              className="rounded-lg bg-amber-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
-            >
-              {publishing ? "公開中..." : "公開する"}
-            </button>
-          </div>
+          {storeMissing ? (
+            <div className="mt-7">
+              <button
+                type="button"
+                onClick={handleStartOver}
+                className="rounded-lg bg-amber-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 dark:bg-amber-700 dark:hover:bg-amber-600"
+              >
+                はじめからやり直す
+              </button>
+            </div>
+          ) : (
+            <div className="mt-7 flex gap-3">
+              <button
+                type="button"
+                onClick={goBack}
+                disabled={publishing}
+                className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 disabled:opacity-50 dark:border-stone-500 dark:text-stone-300 dark:hover:border-stone-500"
+              >
+                戻る
+              </button>
+              <button
+                type="button"
+                onClick={handlePublish}
+                disabled={publishing}
+                className="rounded-lg bg-amber-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
+              >
+                {publishing ? "公開中..." : "公開する"}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </main>
