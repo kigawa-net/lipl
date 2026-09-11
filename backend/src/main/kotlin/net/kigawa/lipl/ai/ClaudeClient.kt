@@ -3,6 +3,7 @@ package net.kigawa.lipl.ai
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.header
@@ -75,6 +76,18 @@ class AnthropicClaudeClient(private val config: ClaudeConfig) : ClaudeClient {
     // KeycloakやAnthropicのトークンレスポンスには未宣言のフィールド（expires_in以外の
     // refresh_expires_in、token_type、scope等）が含まれるため、無視するよう設定する。
     private val client = HttpClient(CIO) {
+        // CIOエンジンはHttpTimeoutを設定しなくてもエンドポイント単位のデフォルトタイムアウト
+        // （15秒）を持っており、LP生成（最大8192トークンの単発生成で15秒を超えうる）が
+        // これに引っかかって未処理のHttpRequestTimeoutExceptionによる500になっていた。
+        // 生成系リクエストを考慮し、明示的に長めのタイムアウトを設定する。
+        engine {
+            requestTimeout = 120_000
+        }
+        install(HttpTimeout) {
+            connectTimeoutMillis = 10_000
+            requestTimeoutMillis = 120_000
+            socketTimeoutMillis = 120_000
+        }
         install(ContentNegotiation) {
             // encodeDefaults=falseだとデフォルト値と等しいフィールド（grant_typeの固定値等）が
             // リクエストJSONから丸ごと省略されてしまうため、明示的にtrueにする。
