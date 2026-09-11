@@ -100,7 +100,15 @@ class SessionAuth(
             if (payload != null) return JWTPrincipal(payload)
         }
 
-        val refreshed = refresh(session.refreshToken) ?: run {
+        val refreshed = try {
+            refresh(session.refreshToken)
+        } catch (e: Exception) {
+            // Keycloakへの疎通自体に失敗した場合（タイムアウト等）はリフレッシュトークンが
+            // 無効と決まったわけではないため、Cookieはクリアせず今回のリクエストのみ
+            // 未認証（401）として扱う。次回リクエストで再度リフレッシュを試みられるようにする。
+            logger.warn("Keycloakへのトークンリフレッシュ通信に失敗しました", e)
+            return null
+        } ?: run {
             clearCookie(call)
             return null
         }
