@@ -1,0 +1,25 @@
+name: Renovate
+
+on:
+  schedule:
+    # 毎週月曜 04:00 JST (= 日曜 19:00 UTC)
+    - cron: "0 19 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v46.2.6
+        with:
+          configurationFile: renovate.json
+          token: "${{ secrets.GITHUB_TOKEN }}"
+        env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
