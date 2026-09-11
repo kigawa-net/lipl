@@ -29,7 +29,8 @@ data class ClaudeMessage(val role: String, val content: String)
 interface ClaudeClient {
     suspend fun complete(systemPrompt: String, messages: List<ClaudeMessage>, maxTokens: Int = 1024): String
 
-    // ページ全体のHTML生成用。品質を優先し、interviewとは別モデル（Claude Sonnet）を使う。
+    // ページ全体のHTML生成用。interviewとは別モデル設定（ClaudeConfig.generationModel）を
+    // 使う。課金プラン実装後、Pro等では品質優先のSonnetに切り替える想定。
     suspend fun completeForGeneration(systemPrompt: String, messages: List<ClaudeMessage>, maxTokens: Int = 1024): String
 }
 
