@@ -19,16 +19,16 @@ data class ClaudeConfig(
     val federation: AnthropicFederationConfig,
 )
 
-// AIヒアリング（質問生成）は軽量なClaude Haikuを使用する（Basic/Proでの切り替えは
-// 課金プラン実装時に対応）。ページ全体のHTML生成はレイアウト・文章の品質を
-// 優先し、Claude Sonnetを使用する。
+// AIヒアリング（質問生成）は軽量なClaude Haikuを使用する。ページ全体のHTML生成も、
+// 現状は課金プランが未実装で全ユーザーがfreeプラン扱いのため、コストを抑えて
+// Claude Haikuを使用する（Basic/Proでの品質優先モデルへの切り替えは課金プラン実装時に対応）。
 fun claudeConfigFromEnv(): ClaudeConfig {
     val keycloakIssuer = System.getenv("KEYCLOAK_ISSUER")
         ?: error("環境変数 KEYCLOAK_ISSUER が設定されていません")
 
     return ClaudeConfig(
         model = System.getenv("ANTHROPIC_MODEL") ?: "claude-haiku-4-5-20251001",
-        generationModel = System.getenv("ANTHROPIC_GENERATION_MODEL") ?: "claude-sonnet-5",
+        generationModel = System.getenv("ANTHROPIC_GENERATION_MODEL") ?: "claude-haiku-4-5-20251001",
         federation = AnthropicFederationConfig(
             keycloakTokenUrl = "$keycloakIssuer/protocol/openid-connect/token",
             keycloakClientId = System.getenv("ANTHROPIC_KEYCLOAK_CLIENT_ID")
