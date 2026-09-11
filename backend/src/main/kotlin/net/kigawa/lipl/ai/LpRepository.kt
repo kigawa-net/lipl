@@ -1,5 +1,6 @@
 package net.kigawa.lipl.ai
 
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -86,11 +87,16 @@ class LpRepository(
         }
         // ページ全体のHTMLを生成するため、質問応答用より大きなトークン上限が必要
         // （既定の1024ではJSONの途中で応答が打ち切られ、パース不能になっていた）。
-        val raw = claudeClient.completeForGeneration(
-            GENERATION_SYSTEM_PROMPT,
-            listOf(ClaudeMessage("user", prompt)),
-            maxTokens = 8192,
-        )
+        val raw = try {
+            claudeClient.completeForGeneration(
+                GENERATION_SYSTEM_PROMPT,
+                listOf(ClaudeMessage("user", prompt)),
+                maxTokens = 8192,
+            )
+        } catch (e: HttpRequestTimeoutException) {
+            logger.error("Claude API呼び出しがタイムアウトしました", e)
+            throw LpGenerationFailedException()
+        }
         val parsed = try {
             parseGenerationResult(raw)
         } catch (e: SerializationException) {
