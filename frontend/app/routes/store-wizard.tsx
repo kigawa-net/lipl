@@ -30,7 +30,7 @@ import {
 } from "~/lib/labels";
 import { HomeLink } from "~/components/HomeLink";
 
-const STEP_LABELS = ["基本情報", "営業形態", "SNS", "メニュー", "写真", "公開"];
+const STEP_LABELS = ["基本情報", "営業形態", "SNS", "写真", "メニュー", "公開"];
 const PHOTO_LIMIT = 15;
 const MAX_PHOTO_SIZE = 10 * 1024 * 1024;
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -734,7 +734,7 @@ export default function StoreWizard() {
         </form>
       )}
 
-      {stepIndex === 3 && storeId !== null && (
+      {stepIndex === 4 && storeId !== null && (
         <div className="form-card">
           <div className="form-section">
             <p className="form-section-title">メニュー</p>
@@ -966,7 +966,7 @@ export default function StoreWizard() {
           <div className="mt-7 flex gap-3">
             <button
               type="button"
-              onClick={() => setStepIndex(4)}
+              onClick={() => setStepIndex(5)}
               className="rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 sm:px-6 dark:bg-amber-700 dark:hover:bg-amber-600"
             >
               {menuItems.length === 0 ? "スキップして次へ" : "次へ"}
@@ -975,7 +975,7 @@ export default function StoreWizard() {
         </div>
       )}
 
-      {stepIndex === 4 && storeId !== null && (
+      {stepIndex === 3 && storeId !== null && (
         <div className="form-card">
           <div className="form-section">
             <p className="form-section-title">写真</p>
@@ -1043,7 +1043,7 @@ export default function StoreWizard() {
           <div className="mt-7 flex gap-3">
             <button
               type="button"
-              onClick={() => setStepIndex(5)}
+              onClick={() => setStepIndex(4)}
               className="rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-800 sm:px-6 dark:bg-amber-700 dark:hover:bg-amber-600"
             >
               {photos.length === 0 ? "スキップして次へ" : "次へ"}
